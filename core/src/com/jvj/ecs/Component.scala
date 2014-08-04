@@ -14,4 +14,9 @@ abstract class Component {
    * */
   def entityType : Class[_ <: Component]
   
+  def withInit(f:(this.type)=>Unit):this.type = {
+    f(this)
+    this
+  }
+  
 }

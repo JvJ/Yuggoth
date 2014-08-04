@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.ApplicationAdapter
 import com.jvj.ecs._
 import com.jvj.gdxutil._
+import com.badlogic.gdx.math.Vector2
 
 
 object SysPrint extends System{
@@ -29,10 +30,17 @@ class Yuggoth extends ApplicationAdapter{
   override def create(){
     batch = new SpriteBatch()
     img = new Texture("badlogic.jpg")
+    
+    // Set up some new Entities
     ents = new EntityCollection(
         new Entity(
-            new TextureComponent(batch, img).withLayer(0)
-            ))
+            new TextureComponent(batch, img).withInit(
+                (t)=>{
+                  t.layer  = 1
+                  t.position = new Vector2(50,50)
+                })),
+        new Entity(
+            new TextureComponent(batch, img)))
   }
   
   override def render(){
@@ -40,7 +48,8 @@ class Yuggoth extends ApplicationAdapter{
 	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 	batch.begin();
 	
-	ents.runSystem(SysRender).runSystem(SysPrint)
+	ents.runSystem(SysRender)
+		
 	
 	batch.end();
   }

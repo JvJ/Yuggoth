@@ -39,6 +39,9 @@ class TextureComponent(batch:SpriteBatch, tex:Texture) extends Renderer{
   }
 }
 
+/* Implements layered rendering of objects.
+ * Higher layers are closer to the screen.
+ * */
 object SysRender extends System{
   
   override def apply (ec:EntityCollection) = {
@@ -56,7 +59,12 @@ object SysRender extends System{
     })
     
     for(l <- min to max){
-      ec.foreach(this(ec,_))
+      for (e <- ec){
+        e.component[Renderer] match {
+          case Some(r) => if (r.layer == l) this(ec,e)
+          case None => ;
+        }
+      }
     }
     
     ec
