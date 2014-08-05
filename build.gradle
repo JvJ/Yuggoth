@@ -20,6 +20,7 @@ allprojects {
         appName = 'yuggoth'
         gdxVersion = '1.2.0'
         roboVMVersion = '0.0.14'
+        scalaXMLVersion = '1.0.2'
     }
 
     repositories {
@@ -27,6 +28,11 @@ allprojects {
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    }
+    
+    dependencies {
+    	// TODO: Is this the correct version
+    	compile "org.scala-lang.modules:scala-xml:$scalaXMLVersion"
     }
 }
 

@@ -26,19 +26,25 @@ class Yuggoth extends ApplicationAdapter{
   var batch:SpriteBatch = null
   var img:Texture = null
   var ents:EntityCollection = null
+  var sysPhysics = new SysPhysics(new Vector2(0,0), true)
   
   override def create(){
     batch = new SpriteBatch()
     img = new Texture("badlogic.jpg")
     
+    
+    
     // Set up some new Entities
     ents = new EntityCollection(
         new Entity(
-            new TextureComponent(batch, img).withInit(
-                (t)=>{
-                  t.layer  = 1
-                  t.position = new Vector2(50,50)
-                })),
+            new TextureComponent(batch, img) withInit{
+              t =>
+                t.layer = 1
+                t.position  = new Vector2(200,50)
+                t.rotation = 0
+                t.flipX = true
+                t.flipY  = true
+            }),
         new Entity(
             new TextureComponent(batch, img)))
   }
@@ -46,10 +52,13 @@ class Yuggoth extends ApplicationAdapter{
   override def render(){
     Gdx.gl.glClearColor(1, 0, 0, 1);
 	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+	
+	
+	
 	batch.begin();
 	
-	ents.runSystem(SysRender)
-		
+	ents.runSystem(sysPhysics)
+		.runSystem(SysRender)
 	
 	batch.end();
   }

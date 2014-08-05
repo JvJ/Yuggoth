@@ -30,12 +30,34 @@ class MultiRenderer(rends:AbstractSeq[Renderer]) extends Renderer{
     _rends.foreach((r)=>r.render(dt, ec, e))
 }
 
-class TextureComponent(batch:SpriteBatch, tex:Texture) extends Renderer{
+class TextureComponent(batch:SpriteBatch, texR:TextureRegion) extends Renderer{
+  
+  def this(bat:SpriteBatch, tex:Texture) = {
+    this(bat, TextureRegion.split(tex, tex.getWidth, tex.getHeight)(0)(0))
+  }
+  
   var position:Vector2 = new Vector2(0,0)
-  val texture = tex
+  var origin:Vector2 = new Vector2(texR.getRegionHeight()/2.0f, texR.getRegionWidth()/2.0f)
+  var size:Vector2 = new Vector2(texR.getRegionWidth(), texR.getRegionHeight())
+  var scale:Vector2 = new Vector2(1.0f,1.0f)
+  var rotation:Float = 0.0f
+  var flipX:Boolean = false
+  var flipY:Boolean = false
+  val textureRegion = texR
   
   def render(dt: Float, ec: EntityCollection, e:Entity):Unit ={
-    batch.draw(tex, position.x, position.y)
+
+    var (sx,sy)=(scale.x, scale.y)
+    
+    if (flipX) { sx = -sx }
+    if (flipY) { sy = -sy }
+    
+    batch.draw(texR,
+        position.x, position.y,
+        origin.x,origin.y,
+        size.x, size.y,
+        sx, sy, // Scale
+        rotation)
   }
 }
 
@@ -44,11 +66,15 @@ class TextureComponent(batch:SpriteBatch, tex:Texture) extends Renderer{
  * */
 object SysRender extends System{
   
+  // Some rendering globals
+  // var 
+  
   override def apply (ec:EntityCollection) = {
     var min:Int = Integer.MAX_VALUE
     var max:Int = Integer.MIN_VALUE
   
-    ec.foreach((e) => {
+    ec foreach {
+      e =>
       e.component[Renderer] match {
         case Some(r) =>{
           if (r.layer < min) min = r.layer
@@ -56,7 +82,7 @@ object SysRender extends System{
         }
         case None => ;
       }
-    })
+    }
     
     for(l <- min to max){
       for (e <- ec){
