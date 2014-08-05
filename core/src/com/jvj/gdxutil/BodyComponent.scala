@@ -31,10 +31,6 @@ class SysPhysics(gravity:Vector2, dbg:Boolean) extends System{
   
   override def apply(ec:EntityCollection) = {
     
-    var gl = Gdx.gl
-    var gl20 = Gdx.gl20
-    var gl30 = Gdx.gl30
-    
     world.step(Gdx.graphics.getDeltaTime() , 6, 2)
     
     if (debug){

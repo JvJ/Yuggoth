@@ -26,14 +26,13 @@ class Yuggoth extends ApplicationAdapter{
   var batch:SpriteBatch = null
   var img:Texture = null
   var ents:EntityCollection = null
-  var sysPhysics = new SysPhysics(new Vector2(0,0), true)
+  var sysPhysics:SysPhysics = null
   
   override def create(){
     batch = new SpriteBatch()
     img = new Texture("badlogic.jpg")
     
-    
-    
+    sysPhysics  = new SysPhysics(new Vector2(0,0), true)
     // Set up some new Entities
     ents = new EntityCollection(
         new Entity(
