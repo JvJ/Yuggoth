@@ -40,6 +40,8 @@ class Entity (identifier:EntityID, components: Component*){
       case None => None
     }
   }
+  
+  def apply[C<:Component:reflect.ClassTag] = component[C]
 }
 
 /**
