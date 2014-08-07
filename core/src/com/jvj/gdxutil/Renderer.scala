@@ -58,7 +58,7 @@ class TextureComponent(batch:SpriteBatch, texR:TextureRegion) extends Renderer{
     
     if (flipX) { sx = -sx }
     if (flipY) { sy = -sy }
-    
+  
     batch.draw(texR,
         position.x, position.y,
         origin.x,origin.y,

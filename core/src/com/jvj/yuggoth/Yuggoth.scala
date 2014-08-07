@@ -15,6 +15,8 @@ import com.badlogic.gdx.physics.box2d.FixtureDef
 import com.badlogic.gdx.physics.box2d.CircleShape
 import com.badlogic.gdx.utils.GdxNativesLoader
 import com.badlogic.gdx.graphics.g2d.Animation
+import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
+import com.jvj.yuggoth.entities._
 
 
 object SysPrint extends System{
@@ -52,45 +54,36 @@ class Yuggoth extends ApplicationAdapter{
     SysRender.position = new Vector2(0,0)
     SysRender.pixToWorld = new Vector2(64f, 64f)
     
-    sysPhysics  = new SysPhysics(new Vector2(0,0))
+    sysPhysics  = new SysPhysics(new Vector2(0,-10))
     sysPhysicsRender = new SysPhysicsRender(sysPhysics, true)
     
     var testFix = new FixtureDef()
     testFix.density = 1
+    testFix.friction = 1
     var shape = new CircleShape()
     shape.setRadius(0.75f)
     testFix.shape = shape
     
-    
-    // A test sprite
-    val spaceManSprite =
-      new SpriteSpec(
-          // Filename and cell size
-          "spaceman_sheet_hires.png", (64,96),
-          // Specifying sprite states
-          'Walking ->	Frames(Animation.PlayMode.LOOP, 0.1f,
-          					(0,1),(0,2),(0,3),(0,4),(0,5)),
-          'Standing ->	Frames(Animation.PlayMode.LOOP, 0.1f, (0,0)),
-          'Jumping ->	Frames(Animation.PlayMode.LOOP, 0.1f, (1,0)))
+    var testFix2 = new FixtureDef()
+    testFix2.density = 1
+    var shape2 = new CircleShape()
+    shape2.setRadius(0.4f)
+    testFix2.shape = shape2
     
     // Set up some new Entities
     ents = new EntityCollection(
-        new Entity(
-            new SpriteComponent('Walking, batch, spaceManSprite) withInit {
-              t =>
-                t.size = new Vector2(1f, 1.5f)
-            },
-            new BodyComponent(sysPhysics.world, testFix, BodyDef.BodyType.DynamicBody, new Vector2(2,2)) withInit {
-              t=>
-                t.body.setAngularVelocity(1.0f)
-            }
-        ),
+        
+        Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
         new Entity(
             new TextureComponent(batch, img) withInit {
               t=>
                 t.position = new Vector2(1,0)
                 t.size = new Vector2(1f, 1f)
-                } ))
+                },
+            new BodyComponent(sysPhysics.world,
+            		List(testFix),
+            		BodyDef.BodyType.StaticBody,
+            		new Vector2(1.5f,0))))
   }
   
   override def render(){

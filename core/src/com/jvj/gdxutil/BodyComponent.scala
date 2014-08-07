@@ -9,7 +9,7 @@ import com.badlogic.gdx.math._
 
 class BodyComponent(
     world:World,
-    fixDef:FixtureDef,
+    fixDefs:Seq[FixtureDef],
     bodyType:BodyDef.BodyType,
     position:Vector2)
     extends Component {
@@ -22,7 +22,9 @@ class BodyComponent(
   bdef.position.y = position.y
   
   val body:Body = world.createBody(bdef)
-  body.createFixture(fixDef)
+  
+  // Create all the fixtures
+  fixDefs foreach {body.createFixture(_)}
   
 }
 
@@ -32,8 +34,6 @@ object SysRenderableBody extends System{
   	  case (Some(r), Some(b)) => {
   	    r.position.set(b.body.getPosition())
   	    r.rotation = b.body.getAngle() * (180.0f/Math.PI.toFloat)
-  	    //b.body .setActive(true)
-  	    //b.body.setAngularVelocity(1)
   	  }
   	  case _ => ;
   	}

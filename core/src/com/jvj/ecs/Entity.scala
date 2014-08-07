@@ -51,7 +51,14 @@ class EntityCollection(ents : Entity*){
   
   private var _ents = new mutable.HashMap[EntityID, Entity]()
   
-  def addEntity(e : Entity) = _ents += (e.id -> e)
+  def addEntity(e : Entity) = {
+    // LEFTOFF: Fail if already exists
+    _ents.get(e.id) match {
+      case Some(_) => throw new Exception(s"Duplicate entity ID:${e.id}.")
+      case None => _ents += (e.id -> e)
+    }
+    
+  }
   
   ents.foreach(addEntity)
   
