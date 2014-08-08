@@ -73,6 +73,8 @@ class Yuggoth extends ApplicationAdapter{
     // Set up some new Entities
     ents = new EntityCollection(
         
+        new Entity(new MapComponent("testmap.tmx", batch)),
+        
         Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
         new Entity(
             

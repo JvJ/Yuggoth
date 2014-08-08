@@ -36,6 +36,16 @@ with Iterable[(Symbol,Entity)]{
         None
     }
   }
+  
+  def removeChild(s:Symbol, ec:EntityCollection):Option[Entity] = {
+    _ents.get(s) match {
+      case Some(e) => ec.get(e.id ) match {
+        case Some(ee) => ec.removeEntity(ee)
+        case _ => None
+      }
+      case _ => None
+    }
+  }
 }
 
 object SysInitChildren extends System{
@@ -49,4 +59,22 @@ object SysInitChildren extends System{
       case None => ;
     }
   }
+}
+
+/* Remove children that are no longer present in the entity
+ * collection.
+ * */
+object SysUpdateChildren extends System{
+  
+  def apply(ec:EntityCollection, e:Entity):Unit = {
+    e[ChildrenComponent] foreach {
+      cc => for ((sym,child) <- cc){
+        ec.get(child.id ) match {
+          case None => cc.removeChild(sym, ec)
+          case _ => ;
+        }
+      }
+    }
+  }
+  
 }

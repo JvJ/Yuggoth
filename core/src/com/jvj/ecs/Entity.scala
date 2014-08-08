@@ -56,12 +56,16 @@ class EntityCollection(ents : Entity*) extends Iterable[Entity]{
   }
   
   def addEntity(e : Entity) = {
-    // LEFTOFF: Fail if already exists
+    // Add entity, but fail if it's already there
     _ents.get(e.id) match {
       case Some(_) => throw new Exception(s"Duplicate entity ID:${e.id}.")
       case None => _ents += (e.id -> e)
     }
-    
+    this
+  }
+  
+  def removeEntity(e:Entity) = {
+    _ents.remove(e.id)
   }
   
   ents.foreach(addEntity)
