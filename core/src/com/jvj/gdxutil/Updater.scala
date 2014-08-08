@@ -6,7 +6,7 @@ import com.jvj.ecs._
 import scala.collection._
 
 abstract class Updater extends Component{
-  final val entityType = classOf[Updater]
+  final val componentType = classOf[Updater]
   
   def update(dt:Float, ec: EntityCollection, e:Entity):Unit
 }

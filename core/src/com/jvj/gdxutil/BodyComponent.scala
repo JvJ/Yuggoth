@@ -14,7 +14,7 @@ class BodyComponent(
     position:Vector2)
     extends Component {
 
-  override val entityType = classOf[BodyComponent]
+  override val componentType = classOf[BodyComponent]
   
   var bdef = new BodyDef()
   bdef.`type` = bodyType

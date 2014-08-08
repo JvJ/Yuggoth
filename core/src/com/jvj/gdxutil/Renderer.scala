@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.g2d._
 
 abstract class Renderer extends Component{
   
-  override val entityType = classOf[Renderer]
+  override val componentType = classOf[Renderer]
   var layer:Int = 0
   var position:Vector2 = new Vector2(0,0)
   var origin:Vector2 = new Vector2(0, 0)

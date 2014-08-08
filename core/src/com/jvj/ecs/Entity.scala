@@ -24,10 +24,10 @@ class Entity (identifier:EntityID, components: Component*){
   private var _comps = new mutable.HashMap[Class[_ <: Component], Component]()
   
   // An addComponent function
-  def addComponent(c : Component) = _comps += (c.entityType -> c)
+  def addComponent(c : Component) = _comps += (c.componentType -> c)
   
   // Continue construction
-  components.foreach((c)=>_comps+=(c.entityType->c))
+  components.foreach((c)=>_comps+=(c.componentType->c))
   
   /* Get some component based on its type.
    * */
@@ -47,9 +47,13 @@ class Entity (identifier:EntityID, components: Component*){
 /**
  * An unordered collection of entities.
  */
-class EntityCollection(ents : Entity*){
+class EntityCollection(ents : Entity*) extends Iterable[Entity]{
   
   private var _ents = new mutable.HashMap[EntityID, Entity]()
+  
+  def iterator = {
+    _ents.toStream map (e=>e._2) iterator
+  }
   
   def addEntity(e : Entity) = {
     // LEFTOFF: Fail if already exists
@@ -68,5 +72,6 @@ class EntityCollection(ents : Entity*){
    * Returns self for chaining.*/
   def runSystem(sys:System):EntityCollection = sys(this)
   
-  def foreach(f:(Entity)=>Unit):Unit = _ents.foreach((e)=>f(e._2))
+  
+  def get(eid:EntityID) = _ents.get(eid)
 }
