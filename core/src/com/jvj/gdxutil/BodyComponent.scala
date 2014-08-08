@@ -32,8 +32,14 @@ object SysRenderableBody extends System{
   def apply(ec:EntityCollection, e:Entity) = {
   	(e[Renderer], e[BodyComponent]) match {
   	  case (Some(r), Some(b)) => {
-  	    r.position.set(b.body.getPosition())
-  	    r.rotation = b.body.getAngle() * (180.0f/Math.PI.toFloat)
+  	    e[PositionComponent] match{
+  	      case Some(WorldPosition(v)) => v.set(b.body.getPosition())
+  	      case _ => ;
+  	    }
+  	    e[RotationComponent] match {
+  	      case Some(wr@WorldRotation(_)) => wr.rot = b.body.getAngle()
+  	      case _ => ;
+  	    }
   	  }
   	  case _ => ;
   	}

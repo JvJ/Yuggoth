@@ -48,23 +48,46 @@ class TextureComponent(batch:SpriteBatch, texR:TextureRegion) extends Renderer{
   
   val textureRegion = texR
   
-  def render(dt: Float, ec: EntityCollection, e:Entity):Unit ={
-
-    var position = SysRender.transformV(new Vector2(this.position).sub( new Vector2(this.size).scl(0.5f)))
-    var size = new Vector2(this.size).scl(SysRender.pixToWorld )
-    var origin = new Vector2(size).scl(0.5f)
+  def render(dt: Float, ec:EntityCollection, e:Entity):Unit = {
+    var position = e[PositionComponent] match {
+      case Some(wp@WorldPosition(_)) => wp.transform
+      case Some(ScreenPosition(v)) => v
+      case _ => new Vector2(0,0);
+    }
     
-    var (sx,sy)=(scale.x, scale.y)
+    var size = e[SizeComponent] match {
+      case Some(ws@WorldSize(_)) => ws.transform
+      case Some(ScreenSize(v)) => v
+      case _ => new Vector2(texR.getRegionWidth(),texR.getRegionHeight())
+    }
     
-    if (flipX) { sx = -sx }
-    if (flipY) { sy = -sy }
-  
+    var origin = e[OriginComponent] match {
+      case Some(wo@WorldOrigin(_)) => wo.transform
+      case Some(ScreenOrigin(v)) => v
+      case _ => new Vector2(0,0)
+    }
+    
+    var (sx, sy) = e[FlipComponent] match {
+      case Some(Flip(false ,false)) => (1,1)
+      case Some(Flip(false ,true)) => (1,-1)
+      case Some(Flip(true ,false)) => (-1,1)
+      case Some(Flip(true ,true)) => (-1,-1)
+      case _ => (1,1)
+    }
+    
+    var rotation = e[RotationComponent] match {
+      case Some(WorldRotation(r)) => r * (180.0f/Math.PI.toFloat)
+      case Some(ScreenRotation(r)) => r
+      case _ => 0
+    }
+    
     batch.draw(texR,
         position.x, position.y,
         origin.x,origin.y,
         size.x, size.y,
         sx, sy, // Scale
         rotation)
+    
   }
 }
 

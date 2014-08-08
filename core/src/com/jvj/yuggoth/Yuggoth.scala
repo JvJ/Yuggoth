@@ -75,11 +75,12 @@ class Yuggoth extends ApplicationAdapter{
         
         Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
         new Entity(
-            new TextureComponent(batch, img) withInit {
-              t=>
-                t.position = new Vector2(1,0)
-                t.size = new Vector2(1f, 1f)
-                },
+            
+            new TextureComponent(batch, img),
+            WorldPosition(new Vector2(1,1)),
+            WorldSize(new Vector2(1,1)),
+            WorldRotation(0),
+            WorldOrigin(new Vector2(1,1)),
             new BodyComponent(sysPhysics.world,
             		List(testFix),
             		BodyDef.BodyType.StaticBody,

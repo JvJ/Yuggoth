@@ -55,9 +55,11 @@ object Spaceman extends EntityFactory{
       batch:SpriteBatch):Entity = {
     
     new Entity(
-    	new SpriteComponent('Standing, batch, sprite) withInit{
-    	  t => t.size  = new Vector2(1f, 1.5f)
-    	},
+    	WorldPosition(position),
+    	WorldRotation(0),
+    	WorldOrigin(new Vector2(0.5f, 0.75f)),
+    	WorldSize(new Vector2(1f, 1.5f)),
+        new SpriteComponent('Standing, batch, sprite),
     	new BodyComponent(world, fixtures(world),
     	    BodyDef.BodyType.DynamicBody, position) withInit {
     	  t =>
