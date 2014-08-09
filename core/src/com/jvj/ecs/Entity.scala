@@ -76,6 +76,9 @@ class EntityCollection(ents : Entity*) extends Iterable[Entity]{
    * Returns self for chaining.*/
   def runSystem(sys:System):EntityCollection = sys(this)
   
+  def runSystems(syss:System*):EntityCollection
+  	= syss.foldLeft(this){(t,s) => t.runSystem(s)}
+  
   
   def get(eid:EntityID) = _ents.get(eid)
 }

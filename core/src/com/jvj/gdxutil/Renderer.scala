@@ -102,6 +102,7 @@ object SysRender extends System{
   var position = new Vector2(0,0)
   var pixToWorld = new Vector2(1,1)
   
+  // TODO: this is a little obsolete now...
   /**
    * Transform coordinates to the proper place on this screen.
    */
@@ -115,8 +116,11 @@ object SysRender extends System{
     var min:Int = Integer.MAX_VALUE
     var max:Int = Integer.MIN_VALUE
   
+    
     if (camera != null){
       camera.update()
+      batch.setProjectionMatrix(camera.projection)
+      batch.setTransformMatrix(new Matrix4().translate(new Vector3(camera .position).scl(-1)))
     }
     
     ec foreach {
@@ -144,10 +148,11 @@ object SysRender extends System{
     ec
   }
   
-  def apply(ec:EntityCollection, e:Entity) = {
+  def apply(ec:EntityCollection, e:Entity):EntityCollection = {
     e.component[Renderer] match {
       case Some(r) => r.render(Gdx.graphics.getDeltaTime(), ec, e)
       case None => ;
     }
+    ec
   }
 }

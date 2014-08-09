@@ -4,9 +4,12 @@ package com.jvj.ecs
  * individual entities.
  * */
 abstract class System {
-  def apply (ec:EntityCollection):EntityCollection = {
-    ec.foreach((e) => this(ec, e))
-    ec
-  }
-  def apply(ec:EntityCollection, e:Entity):Unit
+  
+  /* Apply the system to an entire entity collection.
+   * */
+  def apply (ec:EntityCollection):EntityCollection = ec.foldLeft(ec)(apply)
+    
+  /* Apply the system to a single entity in this collection.
+   * */
+  def apply(ec:EntityCollection, e:Entity):EntityCollection
 }

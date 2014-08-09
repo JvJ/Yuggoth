@@ -58,6 +58,7 @@ object SysInitChildren extends System{
         }
       case None => ;
     }
+    ec
   }
 }
 
@@ -66,7 +67,7 @@ object SysInitChildren extends System{
  * */
 object SysUpdateChildren extends System{
   
-  def apply(ec:EntityCollection, e:Entity):Unit = {
+  def apply(ec:EntityCollection, e:Entity):EntityCollection = {
     e[ChildrenComponent] foreach {
       cc => for ((sym,child) <- cc){
         ec.get(child.id ) match {
@@ -75,6 +76,7 @@ object SysUpdateChildren extends System{
         }
       }
     }
+    ec
   }
   
 }

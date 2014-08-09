@@ -17,6 +17,8 @@ import com.badlogic.gdx.utils.GdxNativesLoader
 import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
 import com.jvj.yuggoth.entities._
+import com.badlogic.gdx.math.Matrix4
+import com.badlogic.gdx.math.Vector3
 
 
 object SysPrint extends System{
@@ -26,6 +28,11 @@ object SysPrint extends System{
       case Some(r) => println ("layer: "+r.layer)
       case None => ;
     }
+    ec.get(EntityName("theTex")) match {
+      case Some(e) => ec.removeEntity(e)
+      case None => None
+    }
+    ec
   }
 }
 
@@ -50,6 +57,9 @@ class Yuggoth extends ApplicationAdapter{
     SysRender.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight())
     SysRender.camera.translate(new Vector2(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2))
     SysRender.batch = batch
+    // TODO: YAY!!!!!!!!!!  It's working!
+    // Keep this up!
+    
     
     SysRender.position = new Vector2(0,0)
     SysRender.pixToWorld = new Vector2(64f, 64f)
@@ -77,7 +87,7 @@ class Yuggoth extends ApplicationAdapter{
         
         Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
         new Entity(
-            
+            EntityName("theTex"),
             new TextureComponent(batch, img),
             WorldPosition(new Vector2(1,1)),
             WorldSize(new Vector2(1,1)),
@@ -86,17 +96,27 @@ class Yuggoth extends ApplicationAdapter{
             new BodyComponent(sysPhysics.world,
             		List(testFix),
             		BodyDef.BodyType.StaticBody,
-            		new Vector2(1.5f,0))))
+            		new Vector2(1.5f,0)))
+        )
+    
+    var smp = new SysMapInitPhysics(sysPhysics.world)
+    
+    ents.runSystem(smp)
+    
   }
   
   override def render(){
     Gdx.gl.glClearColor(0, 0, 0, 1);
 	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-	
-    ents.runSystem(sysPhysics)
-		.runSystem(SysRenderableBody)
-		.runSystem(SysRender)
-		.runSystem(sysPhysicsRender )
+		
+	ents.runSystems(
+	    SysMapUpdate,
+	    sysPhysics,
+	    SysRenderableBody,
+	    SysRender,
+	    sysPhysicsRender,
+	    SysPrint
+	    )
 	
 	
   }

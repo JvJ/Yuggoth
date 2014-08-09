@@ -43,6 +43,7 @@ object SysRenderableBody extends System{
   	  }
   	  case _ => ;
   	}
+  	ec
   }
 }
 
@@ -57,9 +58,7 @@ class SysPhysics(gravity:Vector2) extends System{
     ec
   }
   
-  def apply(ec:EntityCollection, e:Entity) = {
-    // Nop!
-  }
+  def apply(ec:EntityCollection, e:Entity):EntityCollection = ec
 }
 
 class SysPhysicsRender(sp:SysPhysics, dbg:Boolean) extends System{
@@ -83,7 +82,5 @@ class SysPhysicsRender(sp:SysPhysics, dbg:Boolean) extends System{
     ec
   }
   
-  def apply(ec:EntityCollection, e:Entity) = {
-    // Nop!
-  }
+  def apply(ec:EntityCollection, e:Entity):EntityCollection = ec
 }

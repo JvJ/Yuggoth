@@ -12,10 +12,17 @@ import com.badlogic.gdx.utils.Disposable
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.physics.box2d.FixtureDef
+import com.badlogic.gdx.physics.box2d.PolygonShape
+import com.badlogic.gdx.physics.box2d.World
+import com.badlogic.gdx.physics.box2d.BodyDef
 
 /* Static vars for the MapComponent class.
  * */
 object MapComponent {
+  
+  var tileSize = 0.5f
   
   private var mapLoader:TmxMapLoader = null
   
@@ -29,8 +36,25 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
   }
   
   var map = MapComponent.mapLoader.load(filename)
-  // TODO: How to set sprite batch??
-  var mapRenderer = new OrthogonalTiledMapRenderer(map, 1, batch)
+  // TODO: Children for tile layers
+  
+  
+  var tileSize = {
+    // TODO: Can this generate NULL at any point?
+    var props = map.getProperties()
+    
+    var x = props.get[Integer]("tilewidth", classOf[Integer]) 
+    var y = props.get[Integer]("tileheight", classOf[Integer])
+    
+    new Vector2(
+        if (x != null) x.floatValue() else SysRender.pixToWorld.x,
+        if (y != null) y.floatValue() else SysRender.pixToWorld.y)
+  }
+  
+  var mapRenderer = new OrthogonalTiledMapRenderer(
+      map,
+      ((SysRender.pixToWorld .y / tileSize.y) * MapComponent.tileSize),
+      batch)
  
   // LEFTOFF: How to incorporate layers
   override def render(dt:Float, ec:EntityCollection, e:Entity) = {
@@ -40,14 +64,59 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
     }
   }
   
-  // TODO: Implement all these
-  
   // Disposable
   def dispose:Unit = {
     // TODO: How to dispose of textures??
   }
   
   // 
- 
   
+}
+
+class SysMapInitPhysics(world:World) extends System {
+  override def apply (ec:EntityCollection, e:Entity) = {
+    e[Renderer] match {
+      case Some(m:MapComponent) => {
+    	m.map.getLayers().get(0) match {
+    	  case tml:TiledMapTileLayer =>
+    	    var cellSize = m.tileSize
+    	    // LEFTOFF: Add bodies here
+    	    for (x <- 0 until tml.getWidth();
+    	         y <- 0 until tml.getHeight()){
+    	      
+    	      if (tml.getCell(x, y) != null){
+    	        
+    	    	  var f = new FixtureDef()
+    	    	  var s = new PolygonShape()
+    	    	  s.setAsBox(MapComponent.tileSize/2f , MapComponent.tileSize/2f )
+    	    	  f.shape = s
+    	    	  var bdef = new BodyDef()
+    	    	  bdef.`type` = BodyDef.BodyType.StaticBody
+    	    	  bdef.position.x = (x+0.5f) * 0.5f * ((SysRender.pixToWorld .x / cellSize.x) * MapComponent.tileSize)
+    	    	  bdef.position.y = (y+0.5f) * 0.5f * ((SysRender.pixToWorld .y / cellSize.y) * MapComponent.tileSize)
+    	    	  
+    	    	  var bod = world.createBody(bdef)
+    	    	  bod.createFixture(f)
+    	      }
+    	    }
+    	}
+      }
+      case _ => ;
+    }
+    ec
+  }
+}
+
+object SysMapUpdate extends System{
+  // TODO: Apply should always return an entity collection
+  // This way, we can FOLD, instead of mapping
+  override def apply(ec:EntityCollection, e:Entity):EntityCollection = {
+    e[Renderer] match {
+      case Some(m:MapComponent) => {
+        m.mapRenderer.setView(SysRender.camera )
+      }
+      case _ => ; // NOP
+    }
+    ec
+  }
 }
