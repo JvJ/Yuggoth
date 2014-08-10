@@ -49,7 +49,7 @@ case class WorldOrigin(var origin:Vector2) extends OriginComponent{
 }
 
 abstract class FlipComponent extends Component{
-  val componentType = classOf[OriginComponent]
+  val componentType = classOf[FlipComponent]
 }
 
 case class Flip(var x:Boolean, var y:Boolean) extends FlipComponent

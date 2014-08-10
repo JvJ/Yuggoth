@@ -7,6 +7,7 @@ import com.jvj.gdxutil._
 import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.math.Vector3
 
 /* This is a singleton object with methods for generating
  * a spaceman entity and related data.
@@ -48,13 +49,16 @@ object Spaceman extends EntityFactory{
         		  			(0,0)),
           'Jumping ->	Frames(NORMAL, 0.1f,
         		  			(1,0)))
-    
+  
+  class tag extends Component{val componentType = classOf[tag]}
   
   override def create(position:Vector2,
       world:World,
       batch:SpriteBatch):Entity = {
     
     new Entity(
+        new tag(),
+        Flip(false, false),
     	WorldPosition(position),
     	WorldRotation(0),
     	WorldOrigin(new Vector2(0.5f, 0.75f)),
@@ -69,4 +73,46 @@ object Spaceman extends EntityFactory{
     	}
         )
   }
+  
+  object updater extends System {
+    def apply(ec:EntityCollection, e:Entity) = {
+      
+      (e[tag],
+       e[BodyComponent],
+       e[FlipComponent],
+       e[Renderer]) match {
+        case (Some(_),
+            Some(b),
+            Some(f@Flip(_,_)),
+            Some(sprite:SpriteComponent)) =>{
+          
+          var v = b.body.getLinearVelocity()
+          
+          // Left and right movement
+          (KeyState('MoveLeft), KeyState('MoveRight)) match {
+            // TODO: Set appropriate speed
+            case (Some(Held(_)|Pressed), None) => v.x = -2; f.x = true; sprite.setState('Walking)
+            case (None, Some(Held(_)|Pressed)) => v.x = 2; f.x = false; sprite.setState('Walking)
+            case _ => v.x = 0; sprite.setState('Standing)
+          }
+          
+          // Jumps
+          // TODO: Collision handler for groundedness
+          KeyState('Jump) match {
+            case Some(Pressed) => v.y = 5
+            case _ => ;
+          }
+          
+          b.body.setLinearVelocity(v)
+          
+          // Update camera
+          val pos = b.body.getPosition().scl(SysRender.pixToWorld )
+          SysRender.camera .position.set(pos.x, pos.y, 0)
+        }
+        case _ => ;
+      }      
+      ec
+    }
+  }
+  
 }

@@ -19,21 +19,26 @@ import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
 import com.jvj.yuggoth.entities._
 import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.Input
 
 
-object SysPrint extends System{
-  override def apply(ec:EntityCollection, e:Entity) = {
-    println("Id: "+e.id )
-    e.component[Renderer] match{
-      case Some(r) => println ("layer: "+r.layer)
-      case None => ;
+object SysDebug extends System{
+  override def apply(ec:EntityCollection) = {
+	
+    KeyState('TogglePhysics) match {
+      case Some(Pressed) => Glob.debugPhysics = !Glob.debugPhysics 
+      case _ => ;
     }
-    ec.get(EntityName("theTex")) match {
-      case Some(e) => ec.removeEntity(e)
-      case None => None
+    (KeyState('ZoomIn), KeyState('ZoomOut)) match {
+      case (Some(Pressed | Held(_)), None) => SysRender.camera .zoom -= 0.05f
+      case (None, Some(Pressed | Held(_))) => SysRender.camera .zoom += 0.05f
+      case _ => ;
     }
+    
     ec
   }
+  
+  override def apply (ec:EntityCollection, e:Entity) = ec
 }
 
 class Yuggoth extends ApplicationAdapter{
@@ -45,7 +50,6 @@ class Yuggoth extends ApplicationAdapter{
   var ents:EntityCollection = null
   var sysPhysics:SysPhysics = null
   var sysPhysicsRender:SysPhysicsRender = null
-  
   
   override def create(){
     
@@ -66,6 +70,12 @@ class Yuggoth extends ApplicationAdapter{
     
     sysPhysics  = new SysPhysics(new Vector2(0,-10))
     sysPhysicsRender = new SysPhysicsRender(sysPhysics, true)
+    
+    // Input
+    KeyState.setMappings(Glob.keyMappings)
+    Gdx.input.setInputProcessor(KeyState)
+    
+    // A test fixture for the entity
     
     var testFix = new FixtureDef()
     testFix.density = 1
@@ -109,17 +119,25 @@ class Yuggoth extends ApplicationAdapter{
     Gdx.gl.glClearColor(0, 0, 0, 1);
 	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
+	sysPhysicsRender.debug = Glob.debugPhysics
+	
 	ents.runSystems(
+	    
 	    SysMapUpdate,
 	    sysPhysics,
 	    SysRenderableBody,
+	    
+	    Spaceman.updater,
+	    
 	    SysRender,
 	    sysPhysicsRender,
-	    SysPrint
+	    SysDebug,
+	    KeyState
 	    )
-	
-	
+	    
   }
+  
+  //override def 
   
 }
 

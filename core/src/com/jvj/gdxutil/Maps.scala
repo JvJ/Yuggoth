@@ -39,7 +39,7 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
   // TODO: Children for tile layers
   
   
-  var tileSize = {
+  var tilePixelSize = {
     // TODO: Can this generate NULL at any point?
     var props = map.getProperties()
     
@@ -53,7 +53,7 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
   
   var mapRenderer = new OrthogonalTiledMapRenderer(
       map,
-      ((SysRender.pixToWorld .y / tileSize.y) * MapComponent.tileSize),
+      (SysRender.pixToWorld .y / tilePixelSize.y) * MapComponent.tileSize,
       batch)
  
   // LEFTOFF: How to incorporate layers
@@ -79,8 +79,7 @@ class SysMapInitPhysics(world:World) extends System {
       case Some(m:MapComponent) => {
     	m.map.getLayers().get(0) match {
     	  case tml:TiledMapTileLayer =>
-    	    var cellSize = m.tileSize
-    	    // LEFTOFF: Add bodies here
+
     	    for (x <- 0 until tml.getWidth();
     	         y <- 0 until tml.getHeight()){
     	      
@@ -92,8 +91,8 @@ class SysMapInitPhysics(world:World) extends System {
     	    	  f.shape = s
     	    	  var bdef = new BodyDef()
     	    	  bdef.`type` = BodyDef.BodyType.StaticBody
-    	    	  bdef.position.x = (x+0.5f) * 0.5f * ((SysRender.pixToWorld .x / cellSize.x) * MapComponent.tileSize)
-    	    	  bdef.position.y = (y+0.5f) * 0.5f * ((SysRender.pixToWorld .y / cellSize.y) * MapComponent.tileSize)
+    	    	  bdef.position.x = (x+0.5f) * MapComponent.tileSize
+    	    	  bdef.position.y = (y+0.5f) * MapComponent.tileSize
     	    	  
     	    	  var bod = world.createBody(bdef)
     	    	  bod.createFixture(f)

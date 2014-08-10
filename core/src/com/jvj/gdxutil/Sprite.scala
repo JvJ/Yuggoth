@@ -76,7 +76,7 @@ class SpriteComponent (startingState:Symbol, batch:SpriteBatch, spec:SpriteSpec)
   def setState(s:Symbol) = {
     animations.get(s) match {
       case Some(a) =>
-        stateTime = 0.0f
+        if (s != currentState) stateTime = 0.0f
         currentState = s
         currentAnimation = a
       case None =>
