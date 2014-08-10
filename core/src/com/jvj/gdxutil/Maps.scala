@@ -74,9 +74,12 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
 }
 
 class SysMapInitPhysics(world:World) extends System {
+  
+  
   override def apply (ec:EntityCollection, e:Entity) = {
     e[Renderer] match {
       case Some(m:MapComponent) => {
+        // TODO: Child layers!
     	m.map.getLayers().get(0) match {
     	  case tml:TiledMapTileLayer =>
 
@@ -94,8 +97,11 @@ class SysMapInitPhysics(world:World) extends System {
     	    	  bdef.position.x = (x+0.5f) * MapComponent.tileSize
     	    	  bdef.position.y = (y+0.5f) * MapComponent.tileSize
     	    	  
+    	    	  // TODO: Hey... no body component?
+    	    	  // TODO: Make this into a fixture list, make a body component!
     	    	  var bod = world.createBody(bdef)
     	    	  bod.createFixture(f)
+    	    	  //yield 
     	      }
     	    }
     	}
@@ -104,6 +110,41 @@ class SysMapInitPhysics(world:World) extends System {
     }
     ec
   }
+  
+  
+  
+  
+  
+  /* This algorithm analyzes the tiled map and creates edge shapes on co-linear edges.
+   * Check order is counterclockwise.
+   * */
+  def collectEdges(layers:Seq[TiledMapTileLayer]):Seq[(Vector2, Vector2)] = {
+    
+    // Type definitions for the edge collection algorithm
+	abstract class TileEdge{
+	  def checkOrder:List[TileEdge]
+	  def vertices:(Vector2,Vector2)
+	}
+	case class EBottom(x:Int, y:Int) extends TileEdge{
+	  override def checkOrder = List(ERight(x,y), EBottom(x+1,y), ELeft(x+1,y-1))
+	}
+	case class ERight(x:Int, y:Int) extends TileEdge{
+  	  override def checkOrder = List(ETop(x,y), ERight(x,y+1), EBottom(x+1,y+1))
+  	}
+	case class ELeft(x:Int, y:Int) extends TileEdge {
+	  override def checkOrder = List(EBottom(x,y), ELeft(x,y-1), ETop(x-y,y-1))
+	}
+  	case class ETop(x:Int, y:Int) extends TileEdge{
+  	  override def checkOrder = List(ELeft(x,y), ETop(x-1,y), ERight(x-1,y+1))
+  	}
+  	
+  	// LEFTOFF: The rest of this algorithm
+    
+  	// Ease-of use functions for accessing the tile edges
+  	
+    List()
+  }
+  
 }
 
 object SysMapUpdate extends System{

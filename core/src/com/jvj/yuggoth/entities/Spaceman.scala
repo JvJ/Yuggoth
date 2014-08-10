@@ -9,13 +9,17 @@ import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 
+// Custom fixture data classes
+case object FixSpacemanBody extends FixtureData
+case class FixSpacemanCircle(index:Int) extends FixtureData
+
 /* This is a singleton object with methods for generating
  * a spaceman entity and related data.
  * // TODO: Extend EntityFactory?
  * */
 object Spaceman extends EntityFactory{
 
-  def fixtures(w:World):Seq[FixtureDef] = {
+  def fixtures():Seq[(FixtureDef, FixtureData)] = {
     
     var box = new FixtureDef()
     var boxShape = new PolygonShape()
@@ -25,7 +29,7 @@ object Spaceman extends EntityFactory{
     box.density = 1
     
     // Cons it onto the rest
-    box::(for (x <- -2 to 1)  yield {
+    (box, FixSpacemanBody)::(for (x <- -2 to 1)  yield {
       var fix = new FixtureDef()
       var circ = new CircleShape()
       circ.setRadius(0.1f)
@@ -33,7 +37,7 @@ object Spaceman extends EntityFactory{
       fix.shape = circ
       fix.friction = 1
       fix.density = 1
-      fix
+      (fix, FixSpacemanCircle(x+2))
     }).toList
   }
   
@@ -50,14 +54,19 @@ object Spaceman extends EntityFactory{
           'Jumping ->	Frames(NORMAL, 0.1f,
         		  			(1,0)))
   
-  class tag extends Component{val componentType = classOf[tag]}
+  class SpacemanState extends Component{
+    val componentType = classOf[SpacemanState]
+    
+    var grounded = false
+    
+    }
   
   override def create(position:Vector2,
       world:World,
       batch:SpriteBatch):Entity = {
     
     new Entity(
-        new tag(),
+        new SpacemanState(),
         Flip(false, false),
     	WorldPosition(position),
     	WorldRotation(0),
@@ -66,8 +75,10 @@ object Spaceman extends EntityFactory{
         new SpriteComponent('Standing, batch, sprite) withInit {
     	  t => t.layer = 1
     	},
-    	new BodyComponent(world, fixtures(world),
-    	    BodyDef.BodyType.DynamicBody, position) withInit {
+    	new BodyComponent(world, fixtures(),
+    	    BodyDef.BodyType.DynamicBody, position,
+    	    {_=>},
+    	    {_=>}) withInit {
     	  t =>
     	    t.body.setFixedRotation(true)
     	}
@@ -77,7 +88,7 @@ object Spaceman extends EntityFactory{
   object updater extends System {
     def apply(ec:EntityCollection, e:Entity) = {
       
-      (e[tag],
+      (e[SpacemanState],
        e[BodyComponent],
        e[FlipComponent],
        e[Renderer]) match {

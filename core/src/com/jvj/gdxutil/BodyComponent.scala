@@ -5,15 +5,21 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.physics.box2d._
 import com.badlogic.gdx.math._
 
-
+/*Please extend this class to make use of any fixture identifiers you
+ * see fit.*/
+abstract class FixtureData
+case object FixtureNoData extends FixtureData
+case class FixtureTag(s:Symbol) extends FixtureData
 
 class BodyComponent(
     world:World,
-    fixDefs:Seq[FixtureDef],
+    fixDefs:Seq[(FixtureDef, FixtureData)],
     bodyType:BodyDef.BodyType,
-    position:Vector2)
+    position:Vector2,
+    val beginContactEvent:(Contact =>Unit),
+    val endContactEvent:(Contact => Unit))
     extends Component {
-
+  
   override val componentType = classOf[BodyComponent]
   
   var bdef = new BodyDef()
@@ -23,8 +29,50 @@ class BodyComponent(
   
   val body:Body = world.createBody(bdef)
   
-  // Create all the fixtures
-  fixDefs foreach {body.createFixture(_)}
+  // Create all the fixtures and add user data
+  fixDefs foreach {case (f,d) => body.createFixture(f).setUserData(d)}
+  
+  // Set user data of the body to the entity
+  body.setUserData(this.getEntity())
+  
+}
+
+/* This is used to extend 
+ * */
+class CollisionHandler(ec:EntityCollection) extends ContactListener {
+  override def beginContact(c:Contact) = {
+    // Execute contact events for each bodyComponent in the fixture
+    for (fx <- List(c.getFixtureA(), c.getFixtureB())){
+      fx.getBody().getUserData() match {
+        case e:Entity => e[BodyComponent] match {
+          case Some(b) => b.beginContactEvent (c)
+          case _ => ;
+        }
+        case _ => ;
+      }
+    }
+  }
+  
+  override def endContact(c:Contact)  = {
+    // Execute contact events for each bodyComponent in the fixture
+    for (fx <- List(c.getFixtureA(), c.getFixtureB())){
+      fx.getBody().getUserData() match {
+        case e:Entity => e[BodyComponent] match {
+          case Some(b) => b.endContactEvent (c)
+          case _ => ;
+        }
+        case _ => ;
+      }
+    }
+  }
+  
+  override def preSolve(c:Contact, m:Manifold) = {
+    // TODO: Don't know what this is
+  }
+  
+  override def postSolve(c:Contact, imp:ContactImpulse) = {
+    // TODO: Don't know what this is either
+  }
   
 }
 

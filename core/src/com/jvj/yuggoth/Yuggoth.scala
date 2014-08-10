@@ -104,9 +104,9 @@ class Yuggoth extends ApplicationAdapter{
             WorldRotation(0),
             WorldOrigin(new Vector2(1,1)),
             new BodyComponent(sysPhysics.world,
-            		List(testFix),
+            		List((testFix, FixtureNoData)),
             		BodyDef.BodyType.StaticBody,
-            		new Vector2(1.5f,0)))
+            		new Vector2(1.5f,0), {_=>}, {_=>}))
         )
     
     var smp = new SysMapInitPhysics(sysPhysics.world)

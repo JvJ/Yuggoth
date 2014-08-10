@@ -14,6 +14,10 @@ abstract class Component {
    * */
   def componentType : Class[_ <: Component]
   
+  protected[ecs] var owner:Entity = null
+  
+  def getEntity() = owner
+  
   def withInit(f:(this.type)=>Unit):this.type = {
     f(this)
     this

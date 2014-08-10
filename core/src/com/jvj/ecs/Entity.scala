@@ -24,7 +24,10 @@ class Entity (identifier:EntityID, components: Component*){
   private var _comps = new mutable.HashMap[Class[_ <: Component], Component]()
   
   // An addComponent function
-  def addComponent(c : Component) = _comps += (c.componentType -> c)
+  def addComponent(c : Component) = {
+    _comps += (c.componentType -> c)
+    c.owner = this
+    }
   
   // Continue construction
   components.foreach((c)=>_comps+=(c.componentType->c))
