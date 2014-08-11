@@ -68,7 +68,7 @@ class Yuggoth extends ApplicationAdapter{
     SysRender.position = new Vector2(0,0)
     SysRender.pixToWorld = new Vector2(64f, 64f)
     
-    sysPhysics  = new SysPhysics(new Vector2(0,-10))
+    sysPhysics  = new SysPhysics(Glob.gravity)
     sysPhysicsRender = new SysPhysicsRender(sysPhysics, true)
     
     // Input
@@ -106,7 +106,9 @@ class Yuggoth extends ApplicationAdapter{
             new BodyComponent(sysPhysics.world,
             		List((testFix, FixtureNoData)),
             		BodyDef.BodyType.StaticBody,
-            		new Vector2(1.5f,0), {_=>}, {_=>}))
+            		new Vector2(1.5f,0),
+            		CollisionHandler.nop,
+            		CollisionHandler.nop))
         )
     
     

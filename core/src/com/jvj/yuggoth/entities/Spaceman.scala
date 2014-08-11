@@ -51,7 +51,7 @@ object Spaceman extends EntityFactory{
           					(0,1),(0,2),(0,3),(0,4),(0,5)),
           'Standing ->	Frames(LOOP, 0.1f,
         		  			(0,0)),
-          'Jumping ->	Frames(NORMAL, 0.1f,
+          'Jumping ->	Frames(LOOP, 0.1f,
         		  			(1,0)))
   
   class SpacemanState extends Component{
@@ -62,15 +62,36 @@ object Spaceman extends EntityFactory{
     }
   
   /* A collision handler for the spaceman.*/
-  def collision(c:Contact) = {
-    
-    for (fix<-List(c.getFixtureA(), c.getFixtureB())){
-      fix.getUserData() match {
-        case FixSpacemanCircle(i) => println(s"Circle $i made contact.")
-        case _ => ;
+  def collision(e:Entity, thisFix:Fixture, thatFix:Fixture, c:Contact) = {
+   
+    (e[SpacemanState],
+     e[Renderer],
+        thisFix.getUserData(),
+        thatFix.getUserData()) match {
+      case (Some(state),
+          Some(sprite:SpriteComponent),
+          FixSpacemanCircle(_),
+          Floor) => {
+        state.grounded = true
       }
+      case _ => ;
     }
-    
+   
+  }
+  
+  def collisionEnd(e:Entity, thisFix:Fixture, thatFix:Fixture, c:Contact) = {
+    (e[SpacemanState],
+     e[Renderer],
+        thisFix.getUserData(),
+        thatFix.getUserData()) match {
+      case (Some(state),
+          Some(sprite:SpriteComponent),
+          FixSpacemanCircle(_),
+          Floor) => {
+        state.grounded = false
+      }
+      case _ => ;
+    }
   }
   
   override def create(position:Vector2,
@@ -90,7 +111,7 @@ object Spaceman extends EntityFactory{
     	new BodyComponent(world, fixtures(),
     	    BodyDef.BodyType.DynamicBody, position,
     	    collision,
-    	    {_=>}) withInit {
+    	    collisionEnd) withInit {
     	  t =>
     	    t.body.setFixedRotation(true)
     	}
@@ -104,7 +125,7 @@ object Spaceman extends EntityFactory{
        e[BodyComponent],
        e[FlipComponent],
        e[Renderer]) match {
-        case (Some(_),
+        case (Some(state),
             Some(b),
             Some(f@Flip(_,_)),
             Some(sprite:SpriteComponent)) =>{
@@ -114,15 +135,15 @@ object Spaceman extends EntityFactory{
           // Left and right movement
           (KeyState('MoveLeft), KeyState('MoveRight)) match {
             // TODO: Set appropriate speed
-            case (Some(Held(_)|Pressed), None) => v.x = -2; f.x = true; sprite.setState('Walking)
-            case (None, Some(Held(_)|Pressed)) => v.x = 2; f.x = false; sprite.setState('Walking)
-            case _ => v.x = 0; sprite.setState('Standing)
+            case (Some(Held(_)|Pressed), None) => v.x = -2; f.x = true; if (state.grounded) sprite.setState('Walking)
+            case (None, Some(Held(_)|Pressed)) => v.x = 2; f.x = false; if (state.grounded) sprite.setState('Walking)
+            case _ => v.x = 0; if (state.grounded) sprite.setState('Standing)
           }
           
           // Jumps
           // TODO: Collision handler for groundedness
           KeyState('Jump) match {
-            case Some(Pressed) => v.y = 5
+            case Some(Pressed) => v.y = 5; sprite.setState('Jumping); state.grounded = false
             case _ => ;
           }
           

@@ -20,6 +20,8 @@ import com.badlogic.gdx.physics.box2d.PolygonShape
 import com.badlogic.gdx.physics.box2d.World
 import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.EdgeShape
+import com.jvj.gdxutil.CollisionHandler
+import com.jvj.gdxutil.CollisionHandler
 
 // Fixture data classes for the map edges
 case object Floor extends FixtureData
@@ -98,7 +100,8 @@ class SysMapInitPhysics(world:World) extends System {
             verts.toList,
             BodyDef.BodyType.StaticBody,
             new Vector2(0,0),
-            {_=>}, {_=>}))
+            CollisionHandler.nop,
+            CollisionHandler.nop))
         
       }
       case _ => ;

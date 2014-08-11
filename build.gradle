@@ -20,7 +20,7 @@ allprojects {
         appName = 'yuggoth'
         gdxVersion = '1.2.0'
         roboVMVersion = '0.0.14'
-        scalaXMLVersion = '1.0.2'
+        scalaXMLVersion = '2.11.0-M4'
     }
 
     repositories {
@@ -32,7 +32,7 @@ allprojects {
     
     dependencies {
     	// TODO: Is this the correct version
-    	compile "org.scala-lang.modules:scala-xml:$scalaXMLVersion"
+    	compile "org.scala-lang:scala-xml:$scalaXMLVersion"
     }
 }
 

@@ -11,13 +11,20 @@ abstract class FixtureData
 case object FixtureNoData extends FixtureData
 case class FixtureTag(s:Symbol) extends FixtureData
 
+/* A body component.
+ * The beginContactEvent and endContactEvent take four parameters:
+ * 	-This entity:Entity
+ *  -This fixture:Fixture
+ *  -Other fixture:Fixture
+ *  -The contact event:Contact
+ * */
 class BodyComponent(
     world:World,
     fixDefs:Seq[(FixtureDef, FixtureData)],
     bodyType:BodyDef.BodyType,
     position:Vector2,
-    val beginContactEvent:(Contact =>Unit),
-    val endContactEvent:(Contact => Unit))
+    val beginContactEvent:((Entity, Fixture, Fixture, Contact) =>Unit),
+    val endContactEvent:((Entity, Fixture, Fixture, Contact) => Unit))
     extends Component {
   
   override val componentType = classOf[BodyComponent]
@@ -40,32 +47,55 @@ class BodyComponent(
   
 }
 
-/* This is used to extend 
+/* This is used to extend collision handling behaviour.
  * */
+object CollisionHandler {
+  def nop (e:Entity, thisFix:Fixture, thatFix:Fixture, c:Contact):Unit = {
+    // It's a no-op
+  }
+}
 class CollisionHandler(ec:EntityCollection) extends ContactListener {
+  
   override def beginContact(c:Contact) = {
     // Execute contact events for each bodyComponent in the fixture
-    for (fx <- List(c.getFixtureA(), c.getFixtureB())){
-      fx.getBody().getUserData() match {
-        case e:Entity => e[BodyComponent] match {
-          case Some(b) => b.beginContactEvent (c)
-          case _ => ;
-        }
+    val (fa,fb) = (c.getFixtureA(), c.getFixtureB())
+    
+    fa.getBody().getUserData() match {
+      case e:Entity => e[BodyComponent] match {
+        case Some(b) => b.beginContactEvent (e, fa, fb, c)
         case _ => ;
       }
+      case _ => ;
+    }
+    
+    fb.getBody().getUserData() match {
+      case e:Entity => e[BodyComponent] match {
+        case Some(b) => b.beginContactEvent (e, fb, fa, c)
+        case _ => ;
+      }
+      case _ => ;
     }
   }
   
   override def endContact(c:Contact)  = {
+    
     // Execute contact events for each bodyComponent in the fixture
-    for (fx <- List(c.getFixtureA(), c.getFixtureB())){
-      fx.getBody().getUserData() match {
-        case e:Entity => e[BodyComponent] match {
-          case Some(b) => b.endContactEvent (c)
-          case _ => ;
-        }
+    val (fa,fb) = (c.getFixtureA(), c.getFixtureB())
+    
+    fa.getBody().getUserData() match {
+      case e:Entity => e[BodyComponent] match {
+        case Some(b) => b.endContactEvent  (e, fa, fb, c)
         case _ => ;
       }
+      case _ => ;
+    }
+    
+    fb.getBody().getUserData() match {
+      case e:Entity => e[BodyComponent] match {
+        case Some(b) => b.endContactEvent (e, fb, fa, c)
+        case _ => ;
+      }
+      case _ => ;
     }
   }
   
