@@ -23,17 +23,17 @@ object Spaceman extends EntityFactory{
     
     var box = new FixtureDef()
     var boxShape = new PolygonShape()
-    boxShape.setAsBox(0.35f, 0.7f, new Vector2(0f, 0.05f), 0f)
+    boxShape.setAsBox(0.3f, 0.7f, new Vector2(0f, 0.0f), 0f)
     box.shape = boxShape
-    box.friction = 1
+    box.friction = 0
     box.density = 1
     
     // Cons it onto the rest
     (box, FixSpacemanBody)::(for (x <- -2 to 1)  yield {
       var fix = new FixtureDef()
       var circ = new CircleShape()
-      circ.setRadius(0.1f)
-      circ.setPosition(new Vector2(x * 0.35f/2f + 0.1f, -0.65f))
+      circ.setRadius(0.3f/4)
+      circ.setPosition(new Vector2(x * 0.3f/2f + (0.3f/4), -0.65f))
       fix.shape = circ
       fix.friction = 1
       fix.density = 1
@@ -61,6 +61,18 @@ object Spaceman extends EntityFactory{
     
     }
   
+  /* A collision handler for the spaceman.*/
+  def collision(c:Contact) = {
+    
+    for (fix<-List(c.getFixtureA(), c.getFixtureB())){
+      fix.getUserData() match {
+        case FixSpacemanCircle(i) => println(s"Circle $i made contact.")
+        case _ => ;
+      }
+    }
+    
+  }
+  
   override def create(position:Vector2,
       world:World,
       batch:SpriteBatch):Entity = {
@@ -77,7 +89,7 @@ object Spaceman extends EntityFactory{
     	},
     	new BodyComponent(world, fixtures(),
     	    BodyDef.BodyType.DynamicBody, position,
-    	    {_=>},
+    	    collision,
     	    {_=>}) withInit {
     	  t =>
     	    t.body.setFixedRotation(true)

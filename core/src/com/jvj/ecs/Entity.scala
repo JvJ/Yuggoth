@@ -26,11 +26,11 @@ class Entity (identifier:EntityID, components: Component*){
   // An addComponent function
   def addComponent(c : Component) = {
     _comps += (c.componentType -> c)
-    c.owner = this
+    c.whenAdded(this)
     }
   
   // Continue construction
-  components.foreach((c)=>_comps+=(c.componentType->c))
+  components.foreach((c)=>addComponent(c))
   
   /* Get some component based on its type.
    * */

@@ -109,9 +109,12 @@ class Yuggoth extends ApplicationAdapter{
             		new Vector2(1.5f,0), {_=>}, {_=>}))
         )
     
+    
     var smp = new SysMapInitPhysics(sysPhysics.world)
     
     ents.runSystem(smp)
+    
+    sysPhysics.world .setContactListener(new CollisionHandler(ents))
     
   }
   

@@ -18,6 +18,12 @@ abstract class Component {
   
   def getEntity() = owner
   
+  // A handler that is called when this component is added to an entity
+  // When overridden, this should always call the super implementation
+  def whenAdded(e:Entity): Unit = {
+    owner = e
+  }
+  
   def withInit(f:(this.type)=>Unit):this.type = {
     f(this)
     this

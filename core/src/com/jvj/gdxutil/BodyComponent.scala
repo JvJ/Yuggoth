@@ -33,7 +33,10 @@ class BodyComponent(
   fixDefs foreach {case (f,d) => body.createFixture(f).setUserData(d)}
   
   // Set user data of the body to the entity
-  body.setUserData(this.getEntity())
+  override def whenAdded(e:Entity) = {
+    super.whenAdded(e)
+    body.setUserData(this.getEntity())
+  }
   
 }
 

@@ -21,6 +21,11 @@ import com.badlogic.gdx.physics.box2d.World
 import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.EdgeShape
 
+// Fixture data classes for the map edges
+case object Floor extends FixtureData
+case object Ceiling extends FixtureData
+case object Wall extends FixtureData
+
 /* Static vars for the MapComponent class.
  * */
 object MapComponent {
@@ -88,10 +93,9 @@ class SysMapInitPhysics(world:World) extends System {
             	l <- List(m.map.getLayers().get(i));
             	if (l.isInstanceOf[TiledMapTileLayer])) yield l.asInstanceOf[TiledMapTileLayer]
             )
-        val vertsWithData = verts map {v => (v,FixtureNoData)} toList
             
         e.addComponent(new BodyComponent(world,
-            vertsWithData,
+            verts.toList,
             BodyDef.BodyType.StaticBody,
             new Vector2(0,0),
             {_=>}, {_=>}))
@@ -99,6 +103,7 @@ class SysMapInitPhysics(world:World) extends System {
       }
       case _ => ;
     }
+
     ec
   }
   
@@ -106,7 +111,7 @@ class SysMapInitPhysics(world:World) extends System {
   /* This algorithm analyzes the tiled map and creates edge shapes on co-linear edges.
    * Check order is counterclockwise.
    * */
-  def collectEdges(layers:Seq[TiledMapTileLayer]):Set[FixtureDef] = {
+  def collectEdges(layers:Seq[TiledMapTileLayer]):Set[(FixtureDef, FixtureData)] = {
     
     // Type definitions for the edge collection algorithm
 	abstract class TileEdge{
@@ -115,6 +120,7 @@ class SysMapInitPhysics(world:World) extends System {
 	  def sameDir(t:TileEdge):Boolean
 	  def checkOrder:List[TileEdge]
 	  def vertices:(Vector2,Vector2)
+	  def fixData:FixtureData
 	}
 	case class EBottom(x:Int, y:Int) extends TileEdge{
 	  override def sameDir(e:TileEdge) = {e match {case EBottom(_,_) => true; case _ => false}}
@@ -122,6 +128,7 @@ class SysMapInitPhysics(world:World) extends System {
 	  override def vertices =
 	    (new Vector2(x,y).scl(MapComponent.tileSize),
 	     new Vector2(x+1,y).scl(MapComponent.tileSize))
+	  override def fixData = Ceiling
 	}
 	case class ERight(x:Int, y:Int) extends TileEdge{
 	  override def sameDir(e:TileEdge) = {e match {case ERight(_,_) => true; case _ => false}}
@@ -129,6 +136,7 @@ class SysMapInitPhysics(world:World) extends System {
   	  override def vertices =
 	    (new Vector2(x+1,y).scl(MapComponent.tileSize),
 	     new Vector2(x+1,y+1).scl(MapComponent.tileSize))
+	  override def fixData = Wall
   	}
 	case class ETop(x:Int, y:Int) extends TileEdge{
   	  override def sameDir(e:TileEdge) = {e match {case ETop(_,_) => true; case _ => false}}
@@ -136,6 +144,7 @@ class SysMapInitPhysics(world:World) extends System {
   	  override def vertices =
 	    (new Vector2(x+1,y+1).scl(MapComponent.tileSize),
 	     new Vector2(x,y+1).scl(MapComponent.tileSize))
+	  override def fixData = Floor
   	}
 	case class ELeft(x:Int, y:Int) extends TileEdge {
 	  override def sameDir(e:TileEdge) = {e match {case ELeft(_,_) => true; case _ => false}}
@@ -143,6 +152,7 @@ class SysMapInitPhysics(world:World) extends System {
 	  override def vertices =
 	    (new Vector2(x,y+1).scl(MapComponent.tileSize),
 	     new Vector2(x,y).scl(MapComponent.tileSize))
+	  override def fixData = Wall
 	}
   	
 	// A set of tiles coords for verification
@@ -163,7 +173,7 @@ class SysMapInitPhysics(world:World) extends System {
     
 
 	// TODO: This code is very imperative.  Maybe it should be refactored?
-	var acc = Set():Set[(Vector2, Vector2)]
+	var acc = Set():Set[((Vector2, Vector2), FixtureData)]
   	while(!edges.isEmpty){
   	  var current = edges.head
   	  var (trailing,leading) = current.vertices
@@ -171,7 +181,7 @@ class SysMapInitPhysics(world:World) extends System {
   	  breakable {while(true){
 	  	  current.checkOrder.dropWhile(!edges(_)).headOption match {
 	  	    case None =>
-	  	      acc += ((trailing, leading))
+	  	      acc += (((trailing, leading), current.fixData))
 	  	      break
 	  	    case Some(e) =>
 	  	      if (current.sameDir(e)){
@@ -179,7 +189,7 @@ class SysMapInitPhysics(world:World) extends System {
 	  	        current = e
 	  	      }
 	  	      else {
-	  	        acc += ((trailing, leading))
+	  	        acc += (((trailing, leading), current.fixData))
 	  	        break
 	  	      }
 	  	  }
@@ -187,14 +197,14 @@ class SysMapInitPhysics(world:World) extends System {
   	}
 	
 	acc map {
-	  case (v1, v2) =>
+	  case ((v1, v2), fdat) =>
 	    var fd = new FixtureDef()
 	    var es = new EdgeShape()
 	    es.set(v1,v2)
 	    fd.shape = es
 	    // TODO: Floor friction level?
 	    fd.friction = 1
-	    fd
+	    (fd, fdat)
 	}
   }
   
