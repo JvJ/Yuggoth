@@ -22,6 +22,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef
 import com.badlogic.gdx.physics.box2d.EdgeShape
 import com.jvj.gdxutil.CollisionHandler
 import com.jvj.gdxutil.CollisionHandler
+import com.badlogic.gdx.physics.box2d.CircleShape
 
 // Fixture data classes for the map edges
 case object Floor extends FixtureData
@@ -68,10 +69,19 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
  
   // LEFTOFF: How to incorporate layers
   override def render(dt:Float, ec:EntityCollection, e:Entity) = {
-    map.getLayers().get(0) match {
-      case l:TiledMapTileLayer => mapRenderer.renderTileLayer(l)
-      case _ => ;
-    }
+    // Nothing at all!
+  }
+  
+  override def whenAdded(e:Entity) = {
+    
+    // Add the children
+	  e.addComponent(
+	      new ChildrenComponent(
+	          (for (i <- 0 until map.getLayers().getCount())
+	    		        yield (Symbol(s"Layer_$i"),
+	    		        		new Entity(
+	    		        		    new MapLayerComponent(this, i, map.getLayers().get(i))))):_*))
+    
   }
   
   // Disposable
@@ -79,8 +89,18 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
     // TODO: How to dispose of textures??
   }
   
-  // 
+}
+
+class MapLayerComponent(mc:MapComponent, i:Int, m:MapLayer) extends Renderer {
   
+  layer = i
+  
+  override def render(dt:Float, ec:EntityCollection, e:Entity) = {
+    mc.map.getLayers().get(i) match {
+      case l:TiledMapTileLayer => mc.mapRenderer.renderTileLayer(l)
+      case _ => ;
+    }
+  }
 }
 
 class SysMapInitPhysics(world:World) extends System {
@@ -120,38 +140,38 @@ class SysMapInitPhysics(world:World) extends System {
 	abstract class TileEdge{
 	  def x:Int
 	  def y:Int
-	  def sameDir(t:TileEdge):Boolean
-	  def checkOrder:List[TileEdge]
+	  def next:TileEdge
+	  def prev:TileEdge
 	  def vertices:(Vector2,Vector2)
 	  def fixData:FixtureData
 	}
 	case class EBottom(x:Int, y:Int) extends TileEdge{
-	  override def sameDir(e:TileEdge) = {e match {case EBottom(_,_) => true; case _ => false}}
-	  override def checkOrder = List(ERight(x,y), EBottom(x+1,y), ELeft(x+1,y-1))
+	  override def next = EBottom(x+1,y)
+	  override def prev = EBottom(x-1,y)
 	  override def vertices =
 	    (new Vector2(x,y).scl(MapComponent.tileSize),
 	     new Vector2(x+1,y).scl(MapComponent.tileSize))
 	  override def fixData = Ceiling
 	}
 	case class ERight(x:Int, y:Int) extends TileEdge{
-	  override def sameDir(e:TileEdge) = {e match {case ERight(_,_) => true; case _ => false}}
-  	  override def checkOrder = List(ETop(x,y), ERight(x,y+1), EBottom(x+1,y+1))
+  	  override def next = ERight(x,y+1)
+  	  override def prev = ERight(x,y-1)
   	  override def vertices =
 	    (new Vector2(x+1,y).scl(MapComponent.tileSize),
 	     new Vector2(x+1,y+1).scl(MapComponent.tileSize))
 	  override def fixData = Wall
   	}
 	case class ETop(x:Int, y:Int) extends TileEdge{
-  	  override def sameDir(e:TileEdge) = {e match {case ETop(_,_) => true; case _ => false}}
-  	  override def checkOrder = List(ELeft(x,y), ETop(x-1,y), ERight(x-1,y+1))
+  	  override def next = ETop(x-1,y)
+  	  override def prev = ETop(x+1,y)
   	  override def vertices =
 	    (new Vector2(x+1,y+1).scl(MapComponent.tileSize),
 	     new Vector2(x,y+1).scl(MapComponent.tileSize))
 	  override def fixData = Floor
   	}
 	case class ELeft(x:Int, y:Int) extends TileEdge {
-	  override def sameDir(e:TileEdge) = {e match {case ELeft(_,_) => true; case _ => false}}
-	  override def checkOrder = List(EBottom(x,y), ELeft(x,y-1), ETop(x-y,y-1))
+	  override def next = ELeft(x,y-1)
+	  override def prev = ELeft(x,y+1)
 	  override def vertices =
 	    (new Vector2(x,y+1).scl(MapComponent.tileSize),
 	     new Vector2(x,y).scl(MapComponent.tileSize))
@@ -179,27 +199,20 @@ class SysMapInitPhysics(world:World) extends System {
 	var acc = Set():Set[((Vector2, Vector2), FixtureData)]
   	while(!edges.isEmpty){
   	  var current = edges.head
+  	  
+  	  // Back-up the current edge
+  	  while(edges(current.prev)) current = current.prev
   	  var (trailing,leading) = current.vertices
+  	  while(edges(current.next)){
+  	    edges -= current
+  	    current = current.next
+  	    leading = current.vertices._2 
+  	  }
   	  edges -= current
-  	  breakable {while(true){
-	  	  current.checkOrder.dropWhile(!edges(_)).headOption match {
-	  	    case None =>
-	  	      acc += (((trailing, leading), current.fixData))
-	  	      break
-	  	    case Some(e) =>
-	  	      if (current.sameDir(e)){
-	  	        leading = e.vertices._2
-	  	        current = e
-	  	      }
-	  	      else {
-	  	        acc += (((trailing, leading), current.fixData))
-	  	        break
-	  	      }
-	  	  }
-  	  }}
+  	  acc += (((trailing, leading), current.fixData))
   	}
 	
-	acc map {
+	(acc map {
 	  case ((v1, v2), fdat) =>
 	    var fd = new FixtureDef()
 	    var es = new EdgeShape()
@@ -208,7 +221,7 @@ class SysMapInitPhysics(world:World) extends System {
 	    // TODO: Floor friction level?
 	    fd.friction = 1
 	    (fd, fdat)
-	}
+	})
   }
   
 }

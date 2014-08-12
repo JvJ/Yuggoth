@@ -114,7 +114,10 @@ class Yuggoth extends ApplicationAdapter{
     
     var smp = new SysMapInitPhysics(sysPhysics.world)
     
-    ents.runSystem(smp)
+    ents.runSystems(
+        SysInitChildren,
+        smp
+        )
     
     sysPhysics.world .setContactListener(new CollisionHandler(ents))
     

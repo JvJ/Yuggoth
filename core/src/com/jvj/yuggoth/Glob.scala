@@ -26,7 +26,9 @@ object Glob {
       'MoveDown -> S,
       'MoveUp -> W,
       'MoveRight -> D,
-      'Jump -> SPACE
+      'Jump -> SPACE,
+      'ThrustLeft -> Q,
+      'ThrustRight -> E
       
       )
   

@@ -57,6 +57,9 @@ object CollisionHandler {
 class CollisionHandler(ec:EntityCollection) extends ContactListener {
   
   override def beginContact(c:Contact) = {
+    
+    println("Begin contact");
+    
     // Execute contact events for each bodyComponent in the fixture
     val (fa,fb) = (c.getFixtureA(), c.getFixtureB())
     
@@ -78,6 +81,8 @@ class CollisionHandler(ec:EntityCollection) extends ContactListener {
   }
   
   override def endContact(c:Contact)  = {
+    
+    println("End contact");
     
     // Execute contact events for each bodyComponent in the fixture
     val (fa,fb) = (c.getFixtureA(), c.getFixtureB())

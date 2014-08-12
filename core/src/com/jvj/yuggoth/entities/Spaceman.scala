@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.Vector3
 
 // Custom fixture data classes
 case object FixSpacemanBody extends FixtureData
-case class FixSpacemanCircle(index:Int) extends FixtureData
+case class FixSpacemanCircle(var contactFloor:Boolean) extends FixtureData
 
 /* This is a singleton object with methods for generating
  * a spaceman entity and related data.
@@ -21,24 +21,47 @@ object Spaceman extends EntityFactory{
 
   def fixtures():Seq[(FixtureDef, FixtureData)] = {
     
+    val bWidth = 0.6f
+    val bHeight = 1.45f
+    val numCircles = 8
+    val circleRadius = (bWidth/numCircles)/2f
+    
     var box = new FixtureDef()
     var boxShape = new PolygonShape()
-    boxShape.setAsBox(0.3f, 0.7f, new Vector2(0f, 0.0f), 0f)
+    boxShape.setAsBox(bWidth/2f,
+        bHeight/2f - circleRadius,
+        new Vector2(0f, circleRadius/2f),
+        0f)
     box.shape = boxShape
     box.friction = 0
     box.density = 1
     
-    // Cons it onto the rest
-    (box, FixSpacemanBody)::(for (x <- -2 to 1)  yield {
-      var fix = new FixtureDef()
-      var circ = new CircleShape()
-      circ.setRadius(0.3f/4)
-      circ.setPosition(new Vector2(x * 0.3f/2f + (0.3f/4), -0.65f))
-      fix.shape = circ
-      fix.friction = 1
-      fix.density = 1
-      (fix, FixSpacemanCircle(x+2))
-    }).toList
+    
+    var (fix1, fix2) = (new FixtureDef(), new FixtureDef())
+    var (circ1, circ2) = (new CircleShape(), new CircleShape())
+    circ1.setRadius(circleRadius)
+    circ2.setRadius(circleRadius)
+    circ1.setPosition(new Vector2(circleRadius - (bWidth/2), circleRadius-(bHeight/2)))
+    circ2.setPosition(new Vector2((bWidth/2) - circleRadius, circleRadius-(bHeight/2)))
+    fix1.shape = circ1
+    fix2.shape = circ2
+    fix1.friction = 2f
+    fix2.friction = 2f
+    fix1.density = 1
+    fix2.density = 1
+    
+    var fixLine = new FixtureDef()
+    var line = new EdgeShape()
+    line.set(circleRadius - (bWidth/2), -(bHeight/2),
+        (bWidth/2) - circleRadius, -(bHeight/2))
+    fixLine.shape = line
+    fixLine.density = 1f
+    fixLine.friction = 2f
+        
+    List((box, FixSpacemanBody),
+        (fix1, FixSpacemanCircle(false)),
+        (fix2, FixSpacemanCircle(false)),
+        (fixLine, FixSpacemanCircle(false)))
   }
   
   def sprite():SpriteSpec =
@@ -57,49 +80,53 @@ object Spaceman extends EntityFactory{
   class SpacemanState extends Component{
     val componentType = classOf[SpacemanState]
     
-    var grounded = false
+    def getGrounded = circles.foldLeft(false){
+        (acc, fix) => fix match {
+          case FixSpacemanCircle(b) => acc || b
+          case _ => acc
+        }
+      }
+    
+    def setGrounded(b:Boolean) = {
+      for (f@FixSpacemanCircle(_) <- circles) f.contactFloor = b
+    }
+    
+    var circles = List():List[FixtureData]
     
     }
   
   /* A collision handler for the spaceman.*/
-  def collision(e:Entity, thisFix:Fixture, thatFix:Fixture, c:Contact) = {
+  def collision(start:Boolean)(e:Entity, thisFix:Fixture, thatFix:Fixture, c:Contact) = {
    
     (e[SpacemanState],
-     e[Renderer],
         thisFix.getUserData(),
         thatFix.getUserData()) match {
       case (Some(state),
-          Some(sprite:SpriteComponent),
-          FixSpacemanCircle(_),
+          f@FixSpacemanCircle(_),
           Floor) => {
-        state.grounded = true
+            
+        f.contactFloor = start
+        println(s"Contact info: ${state.circles} withStart $start")
       }
       case _ => ;
     }
    
-  }
-  
-  def collisionEnd(e:Entity, thisFix:Fixture, thatFix:Fixture, c:Contact) = {
-    (e[SpacemanState],
-     e[Renderer],
-        thisFix.getUserData(),
-        thatFix.getUserData()) match {
-      case (Some(state),
-          Some(sprite:SpriteComponent),
-          FixSpacemanCircle(_),
-          Floor) => {
-        state.grounded = false
-      }
-      case _ => ;
-    }
   }
   
   override def create(position:Vector2,
       world:World,
       batch:SpriteBatch):Entity = {
     
+    val fixes = fixtures
+    val circs =  (fixes map {
+      case (_, f@FixSpacemanCircle(_)) => List(f)
+      case _ => List()
+    }).foldLeft(List():List[FixtureData])(_++_)
+    
     new Entity(
-        new SpacemanState(),
+        new SpacemanState() withInit {
+          t=> t.circles = circs
+        },
         Flip(false, false),
     	WorldPosition(position),
     	WorldRotation(0),
@@ -108,10 +135,10 @@ object Spaceman extends EntityFactory{
         new SpriteComponent('Standing, batch, sprite) withInit {
     	  t => t.layer = 1
     	},
-    	new BodyComponent(world, fixtures(),
+    	new BodyComponent(world, fixes,
     	    BodyDef.BodyType.DynamicBody, position,
-    	    collision,
-    	    collisionEnd) withInit {
+    	    collision(true),
+    	    collision(false)) withInit {
     	  t =>
     	    t.body.setFixedRotation(true)
     	}
@@ -130,28 +157,52 @@ object Spaceman extends EntityFactory{
             Some(f@Flip(_,_)),
             Some(sprite:SpriteComponent)) =>{
           
-          var v = b.body.getLinearVelocity()
-          
-          // Left and right movement
-          (KeyState('MoveLeft), KeyState('MoveRight)) match {
-            // TODO: Set appropriate speed
-            case (Some(Held(_)|Pressed), None) => v.x = -2; f.x = true; if (state.grounded) sprite.setState('Walking)
-            case (None, Some(Held(_)|Pressed)) => v.x = 2; f.x = false; if (state.grounded) sprite.setState('Walking)
-            case _ => v.x = 0; if (state.grounded) sprite.setState('Standing)
-          }
-          
-          // Jumps
-          // TODO: Collision handler for groundedness
-          KeyState('Jump) match {
-            case Some(Pressed) => v.y = 5; sprite.setState('Jumping); state.grounded = false
-            case _ => ;
-          }
-          
-          b.body.setLinearVelocity(v)
-          
-          // Update camera
-          val pos = b.body.getPosition().scl(SysRender.pixToWorld )
-          SysRender.camera .position.set(pos.x, pos.y, 0)
+              // Update groundedness state
+              
+	          var v = b.body.getLinearVelocity()
+	          
+	          // Left and right movement
+	          if (state.getGrounded){
+		          (KeyState('MoveLeft), KeyState('MoveRight)) match {
+		            // TODO: Set appropriate speed
+		            case (Some(Held(_)|Pressed), None) =>
+		              b.body.applyForce(-10, 0, 0, 0, true); f.x = true; if (state.getGrounded) sprite.setState('Walking)
+		            case (None, Some(Held(_)|Pressed)) =>
+		              b.body.applyForce(10, 0, 0, 0, true);; f.x = false; if (state.getGrounded) sprite.setState('Walking)
+		            case _ => v.x = 0; if (state.getGrounded) sprite.setState('Standing)
+		          }
+	          }
+	          
+	          // Thrusters
+	          // TODO: Should the thrusters be... held?
+	          (KeyState('ThrustLeft), KeyState('ThrustRight)) match {
+	            case (Some(Pressed), None) =>
+	              b.body .applyLinearImpulse(new Vector2(-1, 0), b.body .getWorldCenter(), true)
+	            case (None, Some(Pressed)) =>
+	              b.body .applyLinearImpulse(new Vector2(1, 0), b.body .getWorldCenter(), true)
+	            case _ => ;
+	          }
+	          
+	          // Jumps
+	          // TODO: Collision handler for groundedness
+	          KeyState('Jump) match {
+	            case Some(Pressed) =>
+	              state.setGrounded(false)
+	              b.body .applyLinearImpulse(new Vector2(0,1f), b.body.getWorldCenter(), true);
+	            case Some(Held(t)) if(t<0.15f) =>
+	              b.body .applyLinearImpulse(new Vector2(0,0.4f), b.body.getWorldCenter(), true); 
+	            case _ => ;
+	          }
+	          
+	          if (!state.getGrounded){
+	            sprite.setState('Jumping); 
+	          }
+	          
+	          //b.body.setLinearVelocity(v)
+	          
+	          // Update camera
+	          val pos = b.body.getPosition().scl(SysRender.pixToWorld )
+	          SysRender.camera .position.set(pos.x, pos.y, 0)
         }
         case _ => ;
       }      
