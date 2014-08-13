@@ -1,5 +1,6 @@
 package com.jvj.yuggoth.entities
 
+import com.jvj.yuggoth._
 import com.badlogic.gdx.physics.box2d._
 import com.badlogic.gdx.graphics.g2d._
 import com.jvj.ecs._
@@ -51,10 +52,12 @@ object Spaceman extends EntityFactory{
     fix2.density = 1
     
     var fixLine = new FixtureDef()
-    var line = new EdgeShape()
-    line.set(circleRadius - (bWidth/2), -(bHeight/2),
-        (bWidth/2) - circleRadius, -(bHeight/2))
-    fixLine.shape = line
+    //var line = new EdgeShape()
+    //line.set(circleRadius - (bWidth/2), -(bHeight/2),
+    //    (bWidth/2) - circleRadius, -(bHeight/2))
+    var box2 = new PolygonShape()
+    box2.setAsBox(bWidth/2f-circleRadius, circleRadius, new Vector2(0f, -(bHeight/2) + circleRadius), 0f)
+    fixLine.shape = box2
     fixLine.density = 1f
     fixLine.friction = 2f
         
@@ -157,9 +160,13 @@ object Spaceman extends EntityFactory{
             Some(f@Flip(_,_)),
             Some(sprite:SpriteComponent)) =>{
           
-              // Update groundedness state
-              
+              // Cap the velocity if grounded
+              // TODO: Sliding after thrusting?
 	          var v = b.body.getLinearVelocity()
+	          if (state.getGrounded && Math.abs(v.x) > Glob.spacemanMaxSpeed ){
+	            v.x = Math.signum(v.x) * Glob.spacemanMaxSpeed
+	            b.body .setLinearVelocity(v)
+	          }
 	          
 	          // Left and right movement
 	          if (state.getGrounded){

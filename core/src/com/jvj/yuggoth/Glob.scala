@@ -13,6 +13,8 @@ object Glob {
   
   val gravity = new Vector2(0, -5f)
   
+  val spacemanMaxSpeed = 2f
+  
   // Global key mappings
   val keyMappings = Map (
       

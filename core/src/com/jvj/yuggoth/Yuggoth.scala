@@ -93,7 +93,7 @@ class Yuggoth extends ApplicationAdapter{
     // Set up some new Entities
     ents = new EntityCollection(
         
-        new Entity(new MapComponent("testmap.tmx", batch)),
+        new Entity(new MapComponent("yuggothTest.tmx", batch)),
         
         Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
         new Entity(
@@ -124,7 +124,7 @@ class Yuggoth extends ApplicationAdapter{
   }
   
   override def render(){
-    Gdx.gl.glClearColor(0, 0, 0, 1);
+    Gdx.gl.glClearColor(0.19f, 0, 0.325f, 1);
 	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 	sysPhysicsRender.debug = Glob.debugPhysics

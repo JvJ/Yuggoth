@@ -219,7 +219,7 @@ class SysMapInitPhysics(world:World) extends System {
 	    es.set(v1,v2)
 	    fd.shape = es
 	    // TODO: Floor friction level?
-	    fd.friction = 1
+	    fd.friction = 1f
 	    (fd, fdat)
 	})
   }
