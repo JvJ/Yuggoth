@@ -1,5 +1,5 @@
 package com.jvj.gdxutil
-
+//import scala.c
 import scala.collection._
 import com.jvj.ecs._
 import com.badlogic.gdx.graphics._
@@ -89,46 +89,32 @@ class SpriteComponent (startingState:Symbol, batch:SpriteBatch, spec:SpriteSpec)
   
   override def render(dt:Float, ec:EntityCollection, e:Entity) = {
     stateTime += dt
-    
+
     var texR = currentAnimation.getKeyFrame(stateTime)
     
-    var position = e[PositionComponent] match {
-      case Some(wp@WorldPosition(_)) => wp.transform
-      case Some(ScreenPosition(v)) => v
-      case _ => new Vector2(0,0);
+    if (e.id  == EntityName("Spaceman")){
+      println("Updating Spaceman.")
     }
     
-    var size = e[SizeComponent] match {
-      case Some(ws@WorldSize(_)) => ws.transform
-      case Some(ScreenSize(v)) => v
-      case _ => new Vector2(texR.getRegionWidth(),texR.getRegionHeight())
-    }
-    
-    var origin = e[OriginComponent] match {
-      case Some(wo@WorldOrigin(_)) => wo.transform
-      case Some(ScreenOrigin(v)) => v
-      case _ => new Vector2(0,0)
-    }
-    
-    var (sx, sy) = e[FlipComponent] match {
-      case Some(Flip(false ,false)) => (1,1)
-      case Some(Flip(false ,true)) => (1,-1)
-      case Some(Flip(true ,false)) => (-1,1)
-      case Some(Flip(true ,true)) => (-1,-1)
-      case _ => (1,1)
-    }
-    
-    var rotation = e[RotationComponent] match {
-      case Some(WorldRotation(r)) => r * (180.0f/Math.PI.toFloat)
-      case Some(ScreenRotation(r)) => r
-      case _ => 0
-    }
-    
-    batch.draw(texR,
-        position.x - origin.x, position.y - origin.y,
-        origin.x,origin.y,
+    // TODO: Jegus fuck!  I'll deal with this crap later!
+    e[TransformComponent] match {
+      case Some(t) =>
+        val position = t.toScreen(t.globalPosition)
+        val origin = t.toScreen(t.localOrigin)
+        val size = t.toScreen(t.globalSize)
+        val scale = t.globalScale
+        // TODO: Transform rotation?
+        val rotation = t.globalRotation
+        val (fx, fy) = (if (t.flipX) -1 else 1, if (t.flipY ) -1 else 1)
+        batch.draw(texR,
+        position .x - fx * origin.x, position .y - fy * origin.y,
+        origin.x, origin.y,
         size.x, size.y,
-        sx, sy, // Scale
+        scale.x, scale.y, // Scale
         rotation)
+      case _ =>
+    }
+    
+    
   }
 }

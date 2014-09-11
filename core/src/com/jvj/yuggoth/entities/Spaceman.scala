@@ -2,6 +2,7 @@ package com.jvj.yuggoth.entities
 
 import com.jvj.yuggoth._
 import com.badlogic.gdx.physics.box2d._
+import com.badlogic.gdx.physics.box2d.joints._
 import com.badlogic.gdx.graphics.g2d._
 import com.jvj.ecs._
 import com.jvj.gdxutil._
@@ -9,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import com.badlogic.gdx.physics.box2d.JointDef.JointType
 
 // Custom fixture data classes
 case object FixSpacemanBody extends FixtureData
@@ -19,7 +21,7 @@ case class FixSpacemanCircle(var contactFloor:Boolean) extends FixtureData
  * // TODO: Extend EntityFactory?
  * */
 object Spaceman extends EntityFactory{
-
+  
   def fixtures():Seq[(FixtureDef, FixtureData)] = {
     
     val bWidth = 0.6f
@@ -81,7 +83,7 @@ object Spaceman extends EntityFactory{
         		  			(1,0)))
   
   class SpacemanState extends Component{
-    val componentType = classOf[SpacemanState]
+    val typeTags = List(classOf[SpacemanState])
     
     def getGrounded = circles.foldLeft(false){
         (acc, fix) => fix match {
@@ -109,7 +111,6 @@ object Spaceman extends EntityFactory{
           Floor) => {
             
         f.contactFloor = start
-        println(s"Contact info: ${state.circles} withStart $start")
       }
       case _ => ;
     }
@@ -126,15 +127,31 @@ object Spaceman extends EntityFactory{
       case _ => List()
     }).foldLeft(List():List[FixtureData])(_++_)
     
-    new Entity(
+    val ent = new Entity(
+        EntityName("Spaceman"),
         new SpacemanState() withInit {
           t=> t.circles = circs
+        	t
         },
-        Flip(false, false),
-    	WorldPosition(position),
-    	WorldRotation(0),
-    	WorldOrigin(new Vector2(0.5f, 0.75f)),
-    	WorldSize(new Vector2(1f, 1.5f)),
+        new WorldTransform(
+            position,
+            new Vector2(1f, 1.5f),
+            new Vector2(1f, 1.0f),
+            new Vector2(0.5f, 0.75f),
+            0f,
+            (false, false),
+            'Spaceman2 -> new Entity (
+                new SpriteComponent ('Standing, batch, sprite),
+                new WorldTransform(
+                    new Vector2(-0.5f, 0),
+                    new Vector2(1f, 1f),
+                    new Vector2(1f, 1f),
+                    new Vector2(0.5f, 0.75f),
+                    4f,
+                    (false, false)
+                    )
+                )
+            ),
         new SpriteComponent('Standing, batch, sprite) withInit {
     	  t => t.layer = 1
     	},
@@ -145,7 +162,38 @@ object Spaceman extends EntityFactory{
     	  t =>
     	    t.body.setFixedRotation(true)
     	}
+    	
         )
+    
+    // Initialize some children with bodies
+    /*ent.addComponent(
+        new ChildrenComponent(
+    	    'Test1 -> new Entity(
+    	        new BodyComponent(world,
+    	            {var fd = new FixtureDef()
+    	            var cs = new CircleShape
+    	            cs.setRadius(0.5f)
+    	            fd.density = 0.1f
+    	            fd.shape = cs
+    	            List((fd, FixtureNoData))
+    	            },
+    	            BodyDef.BodyType.DynamicBody,
+    	            new Vector2(1.5f, 2),
+    	            CollisionHandler.nop,
+    	            CollisionHandler.nop) withInit {
+    	        		t=> ent[BodyComponent] match {
+    	        		  case Some(b) =>
+    	        		   	var j = new WeldJointDef
+    	        		   	j.initialize(b.body , t.body, new Vector2(2f, 2f))
+
+    	        		   	//j.`type` = JointType.DistanceJoint
+    	        		   	var jj = world.createJoint(j)
+    	        		   	
+    	        		  case _ => ;
+    	        		}
+    	        	})))*/
+    
+    ent
   }
   
   object updater extends System {
@@ -153,18 +201,18 @@ object Spaceman extends EntityFactory{
       
       (e[SpacemanState],
        e[BodyComponent],
-       e[FlipComponent],
+       e[TransformComponent],
        e[Renderer]) match {
         case (Some(state),
             Some(b),
-            Some(f@Flip(_,_)),
+            Some(t),
             Some(sprite:SpriteComponent)) =>{
           
               // Cap the velocity if grounded
               // TODO: Sliding after thrusting?
 	          var v = b.body.getLinearVelocity()
-	          if (state.getGrounded && Math.abs(v.x) > Glob.spacemanMaxSpeed ){
-	            v.x = Math.signum(v.x) * Glob.spacemanMaxSpeed
+	          if (state.getGrounded && Math.abs(v.x) > Glob.Spaceman.maxSpeed  ){
+	            v.x = Math.signum(v.x) * Glob.Spaceman.maxSpeed 
 	            b.body .setLinearVelocity(v)
 	          }
 	          
@@ -173,9 +221,9 @@ object Spaceman extends EntityFactory{
 		          (KeyState('MoveLeft), KeyState('MoveRight)) match {
 		            // TODO: Set appropriate speed
 		            case (Some(Held(_)|Pressed), None) =>
-		              b.body.applyForce(-10, 0, 0, 0, true); f.x = true; if (state.getGrounded) sprite.setState('Walking)
+		              b.body.applyForce(-10, 0, 0, 0, true); t.flipX = true; if (state.getGrounded) sprite.setState('Walking)
 		            case (None, Some(Held(_)|Pressed)) =>
-		              b.body.applyForce(10, 0, 0, 0, true);; f.x = false; if (state.getGrounded) sprite.setState('Walking)
+		              b.body.applyForce(10, 0, 0, 0, true);; t.flipX = false; if (state.getGrounded) sprite.setState('Walking)
 		            case _ => v.x = 0; if (state.getGrounded) sprite.setState('Standing)
 		          }
 	          }
@@ -191,13 +239,12 @@ object Spaceman extends EntityFactory{
 	          }
 	          
 	          // Jumps
-	          // TODO: Collision handler for groundedness
 	          KeyState('Jump) match {
 	            case Some(Pressed) =>
 	              state.setGrounded(false)
-	              b.body .applyLinearImpulse(new Vector2(0,1f), b.body.getWorldCenter(), true);
-	            case Some(Held(t)) if(t<0.15f) =>
-	              b.body .applyLinearImpulse(new Vector2(0,0.4f), b.body.getWorldCenter(), true); 
+	              b.body .applyLinearImpulse(new Vector2(0,Glob.Spaceman.firstImpulse ), b.body.getWorldCenter(), true);
+	            case Some(Held(t)) if(t<Glob.Spaceman.maxJumpTime  ) =>
+	              b.body .applyLinearImpulse(new Vector2(0,Glob.Spaceman.impulseFactor ), b.body.getWorldCenter(), true); 
 	            case _ => ;
 	          }
 	          
@@ -208,7 +255,7 @@ object Spaceman extends EntityFactory{
 	          //b.body.setLinearVelocity(v)
 	          
 	          // Update camera
-	          val pos = b.body.getPosition().scl(SysRender.pixToWorld )
+	          val pos = new Vector2(b.body.getPosition()).scl(SysRender.pixToWorld )
 	          SysRender.camera .position.set(pos.x, pos.y, 0)
         }
         case _ => ;

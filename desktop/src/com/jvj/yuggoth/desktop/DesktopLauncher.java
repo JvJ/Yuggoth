@@ -8,9 +8,7 @@ public class DesktopLauncher {
 	
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		
 		//com.badlogic.gdx.backends.lwjgl.
 		new LwjglApplication(new Yuggoth(), config);
-
 	}
 }

@@ -25,9 +25,22 @@ class Entity (identifier:EntityID, components: Component*){
   
   // An addComponent function
   def addComponent(c : Component) = {
-    _comps += (c.componentType -> c)
+    for (typ <- c.typeTags) _comps += (typ -> c)
     c.whenAdded(this)
     }
+  
+  def removeComponent[C <: Component : reflect.ClassTag]:Option[C] = {
+    // Get the component, flatMap and foldLeft to remove it
+    // everywhere that it counts
+    component[C] flatMap {
+      c => Some (c.typeTags.foldLeft(c)
+          ({(acc, t) => _comps.get(t) match {
+            case Some(cc) => if (cc == c) _comps.remove(t)
+            case _ => ;
+          }
+          acc}))
+    }
+  }
   
   // Continue construction
   components.foreach((c)=>addComponent(c))

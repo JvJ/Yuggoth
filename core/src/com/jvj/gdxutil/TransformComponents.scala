@@ -2,54 +2,170 @@ package com.jvj.gdxutil
 
 import com.jvj.ecs._
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.math.Matrix3
+import com.jvj.ecs.ChildrenComponent
 
-abstract class PositionComponent extends Component{
-  val componentType = classOf[PositionComponent]
-}
-
-case class ScreenPosition(var pos:Vector2) extends PositionComponent
-case class WorldPosition(var pos:Vector2) extends PositionComponent{
-  def transform:Vector2 = SysRender.transformV(new Vector2(pos))
-}
-
-abstract class VelocityComponent extends Component {
-  val componentType = classOf[VelocityComponent]
-}
-
-case class ScreenVelocity(var vel:Vector2) extends VelocityComponent
-case class WorldVelocity(var vel:Vector2) extends VelocityComponent{
-  def transform:Vector2 = new Vector2(vel).scl(SysRender.pixToWorld)
-}
-
-abstract class RotationComponent extends Component{
-  val componentType = classOf[RotationComponent]
-}
-
-case class ScreenRotation(var rot:Float) extends RotationComponent
-case class WorldRotation(var rot:Float) extends RotationComponent
-
-abstract class SizeComponent extends Component{
-  val componentType = classOf[SizeComponent]
-}
-
-case class ScreenSize(var size:Vector2) extends SizeComponent
-case class WorldSize(var size:Vector2) extends SizeComponent{
-  def transform:Vector2 = new Vector2(size).scl(SysRender.pixToWorld )
-}
-
-/* Represents a rotation origin (i.e. anchor point) for a renderer.
+// LEFTOFF: 
+// The semantics of size vs. scale, and position vs. draw-position, need to be re-defined
+/* An abstract class representing various types of transformations.
  * */
-abstract class OriginComponent extends Component{
-  val componentType = classOf[OriginComponent]
+abstract class TransformComponent(
+    pos:Vector2,
+    size:Vector2,
+    scl:Vector2,
+    orig:Vector2,
+    rot:Float,
+    flp:(Boolean, Boolean),
+    ents:(Symbol, Entity)*) extends ChildrenComponent(ents:_*){
+  
+  // A zero-parameter constructor
+  def this() = this(new Vector2(0,0), new Vector2(1,1), new Vector2(1,1), new Vector2(0,0), 0f, (false, false))
+  
+  override def typeTags = List(classOf[ChildrenComponent], classOf[TransformComponent])
+  private var _parent:TransformComponent = null
+ 
+  // Now that the superconstructor has been called, initialize the child entities
+  for ((_,e) <- ents){
+    e[TransformComponent] match {
+      case Some(tc) => tc._parent = this
+      case _ => throw new Exception("Child of transform component requires transform component.")
+    }
+  }
+  
+  var position : Vector2 = pos
+  var scale : Vector2 = scl
+  var sizev : Vector2 = size
+  var origin : Vector2 = orig
+  var rotation : Float = rot
+  var (flipX, flipY):(Boolean, Boolean) = flp
+  
+  def localTransform : Matrix3 = {
+    var m = new Matrix3()
+    var (fx, fy) = 
+      (if (flipX) -1 else 1, if (flipY) -1 else 1)
+    
+      m.scale(fx,fy)
+    //m.scale(scale).rotate(rotation).translate(position).scale(fx,fy)
+    
+  }
+  
+  // Transformation 
+  /* Transform 
+   * */
+  def transform : Matrix3 = {
+    
+    new Matrix3(parentTransform).mul(localTransform)
+  }
+  
+  def parentTransform: Matrix3 =
+    if (_parent != null) _parent.transform else new Matrix3()
+  
+  def globalRotation(): Float = {
+    parentTransform.rotate(rotation).getRotation()
+  }
+  
+  def globalPosition(): Vector2 = {
+    new Vector2(position).mul(parentTransform)
+  }
+  
+  def localOrigin():Vector2 = {
+    new Vector2(origin)
+  }
+  
+  def globalSize():Vector2 = {
+    var m = parentTransform
+    var v = new Vector2()
+    m.getScale(v)
+    
+    //var (fx, fy) = 
+    //  (if (flipX) -1 else 1, if (flipY) -1 else 1)
+    
+    var ret = new Vector2(sizev).scl(v)//.scl(fx, fy)
+    
+    ret
+  }
+  
+  def globalScale():Vector2 = {
+    var v = new Vector2()
+    parentTransform.getScale(v)
+    
+    var (fx, fy) =
+      (if (flipX) -1 else 1, if (flipY) -1 else 1)
+    
+    new Vector2(fx,fy)
+  }
+  
+  def toScreen(v:Vector2):Vector2
+  
+  /* Set the components based on the transform matrix.
+   * */
+  def set(par:TransformComponent) : TransformComponent = {
+    
+    // 
+    
+    var m = new Matrix3(par.transform).inv()
+    
+    position.mul(m)
+    
+    var v = new Vector2()
+    m.translate(m.getTranslation(v).scl(-1)).rotate(-m.getRotation())
+    scale.mul(m)
+    sizev.mul(m)
+    origin.mul(m)
+    rotation += m.getRotation()
+    
+    this
+  }
+  
+  /*Parent this entity.  Overridden due to relative transformations.*/
+  override def parent(s:Symbol, e:Entity):Entity = {
+    //val mat = this.transform.inv()
+    e[TransformComponent] match {
+      case Some(tc) => tc.set(this)
+      case _ => throw new Exception(s"Cannot parent entity ${e.id}.  TransformComponent required.")
+    }
+    this.owner
+  }
+  
+  /* Unparent the entity referred to by a symbol.
+   * Return the ID (if present).
+   * */
+  override def unparent(s:Symbol):Option[Entity] = {
+	None	  
+  }
+  
 }
 
-case class ScreenOrigin(var origin:Vector2) extends OriginComponent
-case class WorldOrigin(var origin:Vector2) extends OriginComponent{
-  def transform:Vector2 = new Vector2(origin).scl(SysRender.pixToWorld)
+// LEFTOFF: Implement these, remove the other transforms
+// TODO: How to implement transform components with bodies?
+class ScreenTransform(pos:Vector2,
+    size:Vector2,
+    scl:Vector2,
+    orig:Vector2,
+    rot:Float,
+    flp:(Boolean, Boolean),
+    ents:(Symbol, Entity)*) extends
+    TransformComponent(pos, size, scl, orig, rot, flp, ents:_*) {
+   
+  def toScreen(v:Vector2):Vector2 = new Vector2(v)
+  
 }
 
-abstract class FlipComponent extends Component{
-  val componentType = classOf[FlipComponent]
+class WorldTransform(pos:Vector2,
+    size:Vector2,
+    scl:Vector2,
+    orig:Vector2,
+    rot:Float,
+    flp:(Boolean, Boolean),
+    ents:(Symbol, Entity)*) extends
+    TransformComponent(pos, size, scl, orig, rot, flp, ents:_*) {
+   
+  /*Transforms an absolute position vector into screen space.*/
+  def toScreen(v:Vector2):Vector2 = {
+    println(s"Transforming to screen: $v With pixtoworld: ${SysRender.pixToWorld }")
+    val ret = v.scl(SysRender.pixToWorld)
+    println(s"Got screen transform: $ret.")
+    ret
+  }
+  
 }
-
-case class Flip(var x:Boolean, var y:Boolean) extends FlipComponent

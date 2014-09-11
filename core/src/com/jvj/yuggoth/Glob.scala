@@ -9,11 +9,9 @@ import com.badlogic.gdx.math.Vector2
  * */
 object Glob {
 
+  // Physics
   var debugPhysics = true
-  
-  val gravity = new Vector2(0, -5f)
-  
-  val spacemanMaxSpeed = 2f
+  val gravity = new Vector2(0, -5f)  
   
   // Global key mappings
   val keyMappings = Map (
@@ -32,6 +30,14 @@ object Glob {
       'ThrustLeft -> Q,
       'ThrustRight -> E
       
-      )
+  )
+  
+  // Spaceman vars
+  object Spaceman{
+    val maxSpeed = 2f
+    val maxJumpTime = 0.15f
+  	val firstImpulse = 1.2f
+  	val impulseFactor = 0.4f
+  }
   
 }

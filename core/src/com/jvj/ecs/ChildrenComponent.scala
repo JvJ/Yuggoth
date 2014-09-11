@@ -9,7 +9,7 @@ class ChildrenComponent(ents:(Symbol, Entity)*)
 extends Component
 with Iterable[(Symbol,Entity)]{
   
-  val componentType = classOf[ChildrenComponent]
+  override def typeTags = List(classOf[ChildrenComponent]):Seq[Class[_ <: Component]]
   
   private var _ents = new mutable.HashMap[Symbol,Entity]()
   _ents ++= ents map { _ match { case (k,v) => k -> v }}

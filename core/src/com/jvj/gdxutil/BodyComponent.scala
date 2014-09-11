@@ -27,7 +27,7 @@ class BodyComponent(
     val endContactEvent:((Entity, Fixture, Fixture, Contact) => Unit))
     extends Component {
   
-  override val componentType = classOf[BodyComponent]
+  override val typeTags = List(classOf[BodyComponent])
   
   var bdef = new BodyDef()
   bdef.`type` = bodyType
@@ -114,16 +114,17 @@ class CollisionHandler(ec:EntityCollection) extends ContactListener {
   
 }
 
+
+// TODO: Should this be related to graphics anymore?
 object SysRenderableBody extends System{
   def apply(ec:EntityCollection, e:Entity) = {
   	(e[Renderer], e[BodyComponent]) match {
   	  case (Some(r), Some(b)) => {
-  	    e[PositionComponent] match{
-  	      case Some(WorldPosition(v)) => v.set(b.body.getPosition())
-  	      case _ => ;
-  	    }
-  	    e[RotationComponent] match {
-  	      case Some(wr@WorldRotation(_)) => wr.rot = b.body.getAngle()
+  	    e[TransformComponent] match{
+  	      case Some(t) =>
+  	        println(s"Setting position to: ${b.body.getPosition()}.")
+  	        t.position = b.body.getPosition()
+  	        t.rotation = b.body.getAngle()
   	      case _ => ;
   	    }
   	  }

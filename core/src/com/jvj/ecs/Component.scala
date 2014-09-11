@@ -12,7 +12,7 @@ abstract class Component {
    * (i.e. All subclasses of "Renderable" have EntityType = Renderable, so that
    * all sub-objects take up the Renderable slot in the Component map.)
    * */
-  def componentType : Class[_ <: Component]
+  def typeTags : Seq[Class[_ <: Component]]
   
   protected[ecs] var owner:Entity = null
   

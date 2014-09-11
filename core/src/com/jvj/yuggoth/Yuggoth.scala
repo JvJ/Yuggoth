@@ -43,8 +43,6 @@ object SysDebug extends System{
 
 class Yuggoth extends ApplicationAdapter{
   
-  
-  
   var batch:SpriteBatch = null
   var img:Texture = null
   var ents:EntityCollection = null
@@ -98,11 +96,15 @@ class Yuggoth extends ApplicationAdapter{
         Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
         new Entity(
             EntityName("theTex"),
-            new TextureComponent(batch, img),
-            WorldPosition(new Vector2(1,1)),
-            WorldSize(new Vector2(1,1)),
-            WorldRotation(0),
-            WorldOrigin(new Vector2(1,1)),
+            new TextureComponent(batch, img, new Vector2(1f, 1.5f)) withInit {
+              t => t.layer  = 2
+            },
+            new WorldTransform(new Vector2(1,1),
+                new Vector2(1,1.5f),
+                new Vector2(2,1),
+                new Vector2(0,0),
+                45f,
+                (false, false)),
             new BodyComponent(sysPhysics.world,
             		List((testFix, FixtureNoData)),
             		BodyDef.BodyType.StaticBody,
