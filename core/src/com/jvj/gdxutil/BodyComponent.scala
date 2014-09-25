@@ -158,13 +158,9 @@ class SysPhysicsRender(sp:SysPhysics, dbg:Boolean) extends System{
 
       var mat = new Matrix4(SysRender.camera.combined)
       
-      var pos = new Vector2(SysRender.position)
-      var scal = new Vector2(SysRender.pixToWorld)
-      pos.scl(-1)
-      pos.scl(SysRender.pixToWorld)
-      mat.translate(new Vector3(pos.x, pos.y, 0))
-      mat.scale(scal.x, scal.y, 0)
-      dbgRenderer.render(sp.world, mat)
+      var pos = new Vector2(SysRender.position).scl(-1f)
+      
+      dbgRenderer.render(sp.world, mat.translate(pos.x, pos.y, 0))
     }
     ec
   }

@@ -5,6 +5,8 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Matrix3
 import com.jvj.ecs.ChildrenComponent
 
+import MathUtil._
+
 // LEFTOFF: 
 // The semantics of size vs. scale, and position vs. draw-position, need to be re-defined
 /* An abstract class representing various types of transformations.
@@ -19,7 +21,7 @@ abstract class TransformComponent(
     ents:(Symbol, Entity)*) extends ChildrenComponent(ents:_*){
   
   // A zero-parameter constructor
-  def this() = this(new Vector2(0,0), new Vector2(1,1), new Vector2(1,1), new Vector2(0,0), 0f, (false, false))
+  //def this() = this(new Vector2(0,0), new Vector2(1,1), new Vector2(1,1), new Vector2(0,0), 0f, (false, false))
   
   override def typeTags = List(classOf[ChildrenComponent], classOf[TransformComponent])
   private var _parent:TransformComponent = null
@@ -39,13 +41,25 @@ abstract class TransformComponent(
   var rotation : Float = rot
   var (flipX, flipY):(Boolean, Boolean) = flp
   
+  // TODO: This is a hack, but what can I do?
+  def flip : (Boolean, Boolean) = {
+    if (_parent == null){
+      (flipX, flipY)
+    }
+    else{
+      val (fx,fy) = _parent.flip
+      (fx ^ flipX, fy ^ flipY)
+    }
+  }
+  
   def localTransform : Matrix3 = {
     var m = new Matrix3()
     var (fx, fy) = 
       (if (flipX) -1 else 1, if (flipY) -1 else 1)
     
-      m.scale(fx,fy)
-    //m.scale(scale).rotate(rotation).translate(position).scale(fx,fy)
+      
+       m.scale(fx,fy).translate(position).rotate(rotation).scale(scale)
+      //m.scale(scale).rotate(rotation).translate(position).scale(fx,fy)
     
   }
   
@@ -58,28 +72,32 @@ abstract class TransformComponent(
   }
   
   def parentTransform: Matrix3 =
-    if (_parent != null) _parent.transform else new Matrix3()
+    if (_parent != null)
+      _parent.transform
+      else new Matrix3()
   
   def globalRotation(): Float = {
+      // TODO: How to transform rotation?
     parentTransform.rotate(rotation).getRotation()
   }
   
   def globalPosition(): Vector2 = {
-    new Vector2(position).mul(parentTransform)
+    //new Vector2(position).mul(pare ntTransform)
+    new Vector2(0,0).mul(transform)
   }
   
   def localOrigin():Vector2 = {
-    new Vector2(origin)
+    var v = new Vector2()
+    parentTransform.getScale(v)
+    new Vector2(origin).scl(v)
   }
   
   def globalSize():Vector2 = {
     var m = parentTransform
     var v = new Vector2()
     m.getScale(v)
-    
-    //var (fx, fy) = 
-    //  (if (flipX) -1 else 1, if (flipY) -1 else 1)
-    
+    v.x = Math.abs(v.x)
+    v.y = Math.abs(v.y)
     var ret = new Vector2(sizev).scl(v)//.scl(fx, fy)
     
     ret
@@ -89,10 +107,11 @@ abstract class TransformComponent(
     var v = new Vector2()
     parentTransform.getScale(v)
     
-    var (fx, fy) =
+    var (flipX, flipY) = flip
+    var (fx, fy) = 
       (if (flipX) -1 else 1, if (flipY) -1 else 1)
+    new Vector2(v).scl(fx, fy)
     
-    new Vector2(fx,fy)
   }
   
   def toScreen(v:Vector2):Vector2

@@ -56,15 +56,17 @@ class Yuggoth extends ApplicationAdapter{
     
     var w = Gdx.graphics.getWidth()
     
-    SysRender.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight())
+    val (pw,ph) = (64f, 64f)
+    SysRender.position = new Vector2(0,0)
+    SysRender.pixToWorld = new Vector2(pw, ph)
+    SysRender.camera = new OrthographicCamera(Gdx.graphics.getWidth() / pw, Gdx.graphics.getHeight() / ph)
     SysRender.camera.translate(new Vector2(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2))
     SysRender.batch = batch
     // TODO: YAY!!!!!!!!!!  It's working!
     // Keep this up!
     
     
-    SysRender.position = new Vector2(0,0)
-    SysRender.pixToWorld = new Vector2(64f, 64f)
+    
     
     sysPhysics  = new SysPhysics(Glob.gravity)
     sysPhysicsRender = new SysPhysicsRender(sysPhysics, true)
@@ -100,17 +102,18 @@ class Yuggoth extends ApplicationAdapter{
               t => t.layer  = 2
             },
             new WorldTransform(new Vector2(1,1),
-                new Vector2(1,1.5f),
-                new Vector2(2,1),
-                new Vector2(0,0),
+                new Vector2(1,1f),
+                new Vector2(3,3),
+                new Vector2(0.5f,0.5f),
                 45f,
-                (false, false)),
+                (true, true))/* ,
             new BodyComponent(sysPhysics.world,
             		List((testFix, FixtureNoData)),
             		BodyDef.BodyType.StaticBody,
             		new Vector2(1.5f,0),
             		CollisionHandler.nop,
-            		CollisionHandler.nop))
+            		CollisionHandler.nop)*/
+            )
         )
     
     

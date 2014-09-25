@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics._
 import com.badlogic.gdx.graphics.g2d._
 import com.badlogic.gdx.math._
 import com.badlogic.gdx.Gdx
+import MathUtil._
 
 abstract class FrameList
 case class Frames(mode:Animation.PlayMode, delay:Float, cells:(Int,Int)*) extends FrameList
@@ -96,24 +97,44 @@ class SpriteComponent (startingState:Symbol, batch:SpriteBatch, spec:SpriteSpec)
       println("Updating Spaceman.")
     }
     
-    // TODO: Jegus fuck!  I'll deal with this crap later!
     e[TransformComponent] match {
-      case Some(t) =>
-        val position = t.toScreen(t.globalPosition)
-        val origin = t.toScreen(t.localOrigin)
-        val size = t.toScreen(t.globalSize)
-        val scale = t.globalScale
-        // TODO: Transform rotation?
-        val rotation = t.globalRotation
-        val (fx, fy) = (if (t.flipX) -1 else 1, if (t.flipY ) -1 else 1)
-        batch.draw(texR,
-        position .x - fx * origin.x, position .y - fy * origin.y,
-        origin.x, origin.y,
-        size.x, size.y,
-        scale.x, scale.y, // Scale
-        rotation)
+      case Some(tc) =>
+        
+        var trans = new Matrix3(tc.parentTransform)
+        var fx = if (tc.flipX) -1f else 1f
+        var fy = if (tc.flipY) -1f else 1f
+        trans.scale(fx, fy)
+        
+        var c1 = (tc.position - ((tc.origin * tc.scale ) ^> tc.rotation)) * trans
+        var c2 = (c1 + ((tc.sizev * tc.scale ) ^> tc.rotation )) * trans
+        
+        // LEFTOFF: This was a terrible idea, due to rotations!!
+        var b = Math.min(c1.y, c2.y)
+        var t = Math.max(c1.y, c2.y)
+        var l = Math.min(c1.x, c2.x)
+        var r = Math.max(c1.x, c2.x)
+        
+        val clr = Color.WHITE.toFloatBits()
+        
+        var uv1 = v2(if (fx > 0) texR.getU() else texR.getU2(),
+        			 if (fy > 0) texR.getV() else texR.getV2())
+        var uv2 = v2(if (fx > 0) texR.getU2() else texR.getU(),
+        			 if (fy > 0) texR.getV2() else texR.getV())
+        
+        // Vertices are made up of x,y,color,u,v
+        var verts = Array[Float](
+            l, b, clr, uv1.x, uv2.y,
+            l, t, clr, uv1.x, uv1.y,
+            r, t, clr, uv2.x, uv1.y,
+            r, b, clr, uv2.x, uv2.y);
+        
+        // TODO: Regions and rects!
+        batch.draw(texR.getTexture(), verts, 0, verts.length);
+        
+        
+        
       case _ =>
-    }
+    }	
     
     
   }

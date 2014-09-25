@@ -131,19 +131,18 @@ object Spaceman extends EntityFactory{
         EntityName("Spaceman"),
         new SpacemanState() withInit {
           t=> t.circles = circs
-        	t
         },
         new WorldTransform(
             position,
             new Vector2(1f, 1.5f),
-            new Vector2(1f, 1.0f),
+            new Vector2(1f, 2.0f),
             new Vector2(0.5f, 0.75f),
             0f,
             (false, false),
             'Spaceman2 -> new Entity (
                 new SpriteComponent ('Standing, batch, sprite),
                 new WorldTransform(
-                    new Vector2(-0.5f, 0),
+                    new Vector2(-0.0f, 0),
                     new Vector2(1f, 1f),
                     new Vector2(1f, 1f),
                     new Vector2(0.5f, 0.75f),
@@ -255,8 +254,8 @@ object Spaceman extends EntityFactory{
 	          //b.body.setLinearVelocity(v)
 	          
 	          // Update camera
-	          val pos = new Vector2(b.body.getPosition()).scl(SysRender.pixToWorld )
-	          SysRender.camera .position.set(pos.x, pos.y, 0)
+	          val pos = new Vector2(b.body.getPosition())
+	          SysRender.camera.position.set(pos.x, pos.y, 0)
         }
         case _ => ;
       }      

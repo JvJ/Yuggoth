@@ -6,6 +6,8 @@ import com.badlogic.gdx._
 import com.badlogic.gdx.graphics._
 import com.badlogic.gdx.math._
 import com.badlogic.gdx.graphics.g2d._
+import MathUtil._
+import scala.util.Random
 
 abstract class Renderer extends Component{
   
@@ -50,31 +52,50 @@ class TextureComponent(batch:SpriteBatch, texR:TextureRegion, size:Vector2) exte
   
   val textureRegion = texR
   
+  var tm = 0f
   def render(dt: Float, ec:EntityCollection, e:Entity):Unit = {
     
-     e[TransformComponent] match {
-      case Some(t) =>
-        //val position = t.toScreen(t.globalPosition)
-        //val origin = t.toScreen(t.localOrigin)
-        //val size = t.toScreen(t.globalSize)
+    e[TransformComponent] match {
+      case Some(tc) =>
         
-        val position = t.globalPosition
-        val origin = t.localOrigin
-        val size = t.globalPosition
+        var trans = new Matrix3(tc.parentTransform)
+        var fx = if (tc.flipX) -1f else 1f
+        var fy = if (tc.flipY) -1f else 1f
+        trans.scale(fx, fy)
         
-        val scale = t.globalScale
-        // TODO: Transform rotation?
-        val rotation = t.globalRotation
-        val (fx, fy) = (if (t.flipX) -1 else 1, if (t.flipY ) -1 else 1)
-        batch.draw(texR,
-            position.x, position.y,
-        	//position .x - fx * origin.x, position .y - fy * origin.y,
-        origin.x, origin.y,
-        size.x, size.y,
-        scale.x, scale.y, // Scale
-        rotation)
+        var c1 = (tc.position - ((tc.origin * tc.scale ) ^> tc.rotation)) * trans
+        var c2 = (c1 + ((tc.sizev * tc.scale ) ^> tc.rotation )) * trans
+        
+        var b = Math.min(c1.y, c2.y)
+        var t = Math.max(c1.y, c2.y)
+        var l = Math.min(c1.x, c2.x)
+        var r = Math.max(c1.x, c2.x)
+        
+        val clr = Color.WHITE.toFloatBits()
+        
+        // Vertices are made up of x,y,color,u,v
+        var verts = Array[Float](
+            l, b, clr, 0, 1f,
+            l, t, clr, 0, 0,
+            r, t, clr, 1f, 0,
+            r, b, clr, 1f, 1f);
+        
+        // TODO: Regions and rects!
+        batch.draw(texR.getTexture(), verts, 0, verts.length);
+        /*
+        val position = t.position
+        val origin = t.origin 
+        val size = t.sizev
+        val scale = t.scale 
+        
+        batch.draw(texR, position.x, position.y,
+        	origin.x, origin.y,
+        	size.x, size.y,
+        	scale.x, scale.y,
+        	rotation)*/
+        
       case _ =>
-    }
+    }	
     
   }
 }
@@ -108,9 +129,12 @@ object SysRender extends System{
     if (camera != null){
       camera.update()
       var proj = new Matrix4(camera.projection)
-      proj.scale(pixToWorld.x, pixToWorld.y, 0)
+      
+      //proj.scale(1f/pixToWorld.x, 1f/pixToWorld.y, 0)
       batch.setProjectionMatrix(proj)
-      batch.setTransformMatrix(new Matrix4().translate(new Vector3(camera .position).scl(-1)))
+      
+      var mat = new Matrix4().translate(new Vector3(camera.position).scl(-1))
+      batch.setTransformMatrix(mat)
     }
     
     ec foreach {
