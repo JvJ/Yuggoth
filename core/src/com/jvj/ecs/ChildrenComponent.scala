@@ -51,13 +51,24 @@ with Iterable[(Symbol,Entity)]{
 object SysInitChildren extends System{
   
   def apply(ec:EntityCollection, e:Entity) = {
-    e[ChildrenComponent] match {
+    
+    def internalRec(ent:Entity):Unit = {
+      ent[ChildrenComponent] match {
       case Some(cc) =>
         for ((_,ee)<- cc ){
-          ec.addEntity(ee)
+          internalRec(ee)
         }
       case None => ;
+      }
+      
+      ec.get(ent.id) match {
+        case None => ec.addEntity(ent)
+        case _ => ;
+     }
     }
+    
+    internalRec(e)
+    
     ec
   }
 }

@@ -124,7 +124,7 @@ object SysRenderableBody extends System{
   	      case Some(t) =>
   	        println(s"Setting position to: ${b.body.getPosition()}.")
   	        t.position = b.body.getPosition()
-  	        t.rotation = b.body.getAngle()
+  	        t.rotation = Math.toDegrees(b.body.getAngle()).toFloat
   	      case _ => ;
   	    }
   	  }

@@ -29,9 +29,16 @@ object SysDebug extends System{
       case Some(Pressed) => Glob.debugPhysics = !Glob.debugPhysics 
       case _ => ;
     }
-    (KeyState('ZoomIn), KeyState('ZoomOut)) match {
+    (KeyState('ZoomIn),
+        KeyState('ZoomOut)) match {
       case (Some(Pressed | Held(_)), None) => SysRender.camera .zoom -= 0.05f
       case (None, Some(Pressed | Held(_))) => SysRender.camera .zoom += 0.05f
+      case _ => ;
+    }
+    (KeyState('CamLeft),
+        KeyState('CamRight)) match {
+      case (Some(Pressed | Held(_)), None) => SysRender.camera.translate(-1f, 0)
+      case (None, Some(Pressed | Held(_))) => SysRender.camera.translate(0, 1f)
       case _ => ;
     }
     
@@ -60,13 +67,7 @@ class Yuggoth extends ApplicationAdapter{
     SysRender.position = new Vector2(0,0)
     SysRender.pixToWorld = new Vector2(pw, ph)
     SysRender.camera = new OrthographicCamera(Gdx.graphics.getWidth() / pw, Gdx.graphics.getHeight() / ph)
-    SysRender.camera.translate(new Vector2(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2))
     SysRender.batch = batch
-    // TODO: YAY!!!!!!!!!!  It's working!
-    // Keep this up!
-    
-    
-    
     
     sysPhysics  = new SysPhysics(Glob.gravity)
     sysPhysicsRender = new SysPhysicsRender(sysPhysics, true)
@@ -95,8 +96,8 @@ class Yuggoth extends ApplicationAdapter{
         
         new Entity(new MapComponent("yuggothTest.tmx", batch)),
         
-        Spaceman.create(new Vector2(2,6), sysPhysics.world , batch),
-        new Entity(
+        Spaceman.create(new Vector2(2,6), sysPhysics.world , batch)
+        /*new Entity(
             EntityName("theTex"),
             new TextureComponent(batch, img, new Vector2(1f, 1.5f)) withInit {
               t => t.layer  = 2
@@ -113,7 +114,7 @@ class Yuggoth extends ApplicationAdapter{
             		new Vector2(1.5f,0),
             		CollisionHandler.nop,
             		CollisionHandler.nop)*/
-            )
+            )*/
         )
     
     
@@ -136,11 +137,18 @@ class Yuggoth extends ApplicationAdapter{
 	
 	ents.runSystems(
 	    
+      sysPhysics,
+      
+      hoverBitUpdater,
+      babyBitUpdater,
+      
+      Spaceman.updater,
+      
 	    SysMapUpdate,
-	    sysPhysics,
-	    SysRenderableBody,
 	    
-	    Spaceman.updater,
+	    SysRenderableBody,
+      
+      
 	    
 	    SysRender,
 	    sysPhysicsRender,
@@ -149,8 +157,6 @@ class Yuggoth extends ApplicationAdapter{
 	    )
 	    
   }
-  
-  //override def 
   
 }
 

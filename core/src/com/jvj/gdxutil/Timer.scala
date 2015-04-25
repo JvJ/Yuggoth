@@ -2,7 +2,9 @@ package com.jvj.gdxutil
 
 import com.jvj.ecs._
 
-/* A trigger that fires
+/* A trigger that fires when a timeout has elapsed.
+ * 
+ * Not yet implemented!
  * */
 class TimerComponent extends TriggerComponent{
 

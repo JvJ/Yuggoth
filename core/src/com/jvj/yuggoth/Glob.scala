@@ -20,6 +20,10 @@ object Glob {
       'TogglePhysics -> F1,
       'ZoomIn -> EQUALS,
       'ZoomOut -> MINUS,
+      'CamLeft -> LEFT,
+      'CamRight -> RIGHT,
+      'CamUp -> UP,
+      'CamDown -> DOWN,
       
       // For controls
       'MoveLeft -> A,

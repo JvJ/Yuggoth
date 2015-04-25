@@ -62,9 +62,11 @@ class MapComponent(filename:String, batch:SpriteBatch) extends Renderer{
         if (y != null) y.floatValue() else SysRender.pixToWorld.y)
   }
   
+  var stw = SysRender
+  
   var mapRenderer = new OrthogonalTiledMapRenderer(
       map,
-      (SysRender.pixToWorld .y / tilePixelSize.y) * MapComponent.tileSize,
+      MapComponent.tileSize / tilePixelSize.y,
       batch)
  
   // LEFTOFF: How to incorporate layers
@@ -97,7 +99,8 @@ class MapLayerComponent(mc:MapComponent, i:Int, m:MapLayer) extends Renderer {
   
   override def render(dt:Float, ec:EntityCollection, e:Entity) = {
     mc.map.getLayers().get(i) match {
-      case l:TiledMapTileLayer => mc.mapRenderer.renderTileLayer(l)
+      case l:TiledMapTileLayer =>
+        mc.mapRenderer.renderTileLayer(l)
       case _ => ;
     }
   }

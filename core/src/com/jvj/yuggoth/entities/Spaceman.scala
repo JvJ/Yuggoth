@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.Animation.PlayMode._
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.physics.box2d.JointDef.JointType
+import com.jvj.gdxutil.MathUtil._
+import com.badlogic.gdx.Input.Keys._
 
 // Custom fixture data classes
 case object FixSpacemanBody extends FixtureData
@@ -135,20 +137,14 @@ object Spaceman extends EntityFactory{
         new WorldTransform(
             position,
             new Vector2(1f, 1.5f),
-            new Vector2(1f, 2.0f),
+            new Vector2(1.0f, 1.0f),
             new Vector2(0.5f, 0.75f),
             0f,
             (false, false),
-            'Spaceman2 -> new Entity (
-                new SpriteComponent ('Standing, batch, sprite),
-                new WorldTransform(
-                    new Vector2(-0.0f, 0),
-                    new Vector2(1f, 1f),
-                    new Vector2(1f, 1f),
-                    new Vector2(0.5f, 0.75f),
-                    4f,
-                    (false, false)
-                    )
+            'HoverBit -> HoverBit.create(
+                -v2(1f, 0),
+                world,
+                batch
                 )
             ),
         new SpriteComponent('Standing, batch, sprite) withInit {
@@ -160,37 +156,7 @@ object Spaceman extends EntityFactory{
     	    collision(false)) withInit {
     	  t =>
     	    t.body.setFixedRotation(true)
-    	}
-    	
-        )
-    
-    // Initialize some children with bodies
-    /*ent.addComponent(
-        new ChildrenComponent(
-    	    'Test1 -> new Entity(
-    	        new BodyComponent(world,
-    	            {var fd = new FixtureDef()
-    	            var cs = new CircleShape
-    	            cs.setRadius(0.5f)
-    	            fd.density = 0.1f
-    	            fd.shape = cs
-    	            List((fd, FixtureNoData))
-    	            },
-    	            BodyDef.BodyType.DynamicBody,
-    	            new Vector2(1.5f, 2),
-    	            CollisionHandler.nop,
-    	            CollisionHandler.nop) withInit {
-    	        		t=> ent[BodyComponent] match {
-    	        		  case Some(b) =>
-    	        		   	var j = new WeldJointDef
-    	        		   	j.initialize(b.body , t.body, new Vector2(2f, 2f))
-
-    	        		   	//j.`type` = JointType.DistanceJoint
-    	        		   	var jj = world.createJoint(j)
-    	        		   	
-    	        		  case _ => ;
-    	        		}
-    	        	})))*/
+    	})
     
     ent
   }
@@ -247,6 +213,13 @@ object Spaceman extends EntityFactory{
 	            case _ => ;
 	          }
 	          
+            // Whatevs
+            (KeyState(NUM_3), KeyState(NUM_4)) match{
+              case (Some(Held(_)), None) => t.scale -= v2(0.1f,0.1f)
+              case (None, Some(Held(_))) => t.scale += v2(0.1f,0.1f)
+              case _ => ;
+            }
+            
 	          if (!state.getGrounded){
 	            sprite.setState('Jumping); 
 	          }

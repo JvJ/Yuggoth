@@ -1,7 +1,7 @@
 package com.jvj.yuggoth.desktop;
 
-import com.badlogic.gdx.backends.lwjgl.*;
-import com.badlogic.gdx.utils.GdxNativesLoader;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.jvj.yuggoth.Yuggoth;
 
 public class DesktopLauncher {

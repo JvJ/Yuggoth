@@ -24,7 +24,6 @@ abstract class TriggerComponent extends Component {
  * The default constructor takes a list of symbol - trigger component pairs.
  */
 class Triggers(trigs:(Symbol, TriggerComponent)*) extends Component with Iterable[(Symbol, TriggerComponent)] {
-
   
   override val typeTags = List(classOf[Triggers])
   

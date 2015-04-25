@@ -93,44 +93,44 @@ class SpriteComponent (startingState:Symbol, batch:SpriteBatch, spec:SpriteSpec)
 
     var texR = currentAnimation.getKeyFrame(stateTime)
     
-    if (e.id  == EntityName("Spaceman")){
+    if (e.id  == EntityName("BabyBit")){
       println("Updating Spaceman.")
     }
     
     e[TransformComponent] match {
       case Some(tc) =>
         
-        var trans = new Matrix3(tc.parentTransform)
-        var fx = if (tc.flipX) -1f else 1f
-        var fy = if (tc.flipY) -1f else 1f
-        trans.scale(fx, fy)
+        var trans = tc.transform
         
-        var c1 = (tc.position - ((tc.origin * tc.scale ) ^> tc.rotation)) * trans
-        var c2 = (c1 + ((tc.sizev * tc.scale ) ^> tc.rotation )) * trans
+        // corners
+        var bl = v2(0,0)-tc.origin
+        var tr = v2(tc.sizev)-tc.origin
+        var tl = v2(0, tc.sizev.y) - tc.origin
+        var br = v2(tc.sizev.x, 0) - tc.origin
         
-        // LEFTOFF: This was a terrible idea, due to rotations!!
-        var b = Math.min(c1.y, c2.y)
-        var t = Math.max(c1.y, c2.y)
-        var l = Math.min(c1.x, c2.x)
-        var r = Math.max(c1.x, c2.x)
+        bl *= trans
+        tr *= trans
+        tl *= trans
+        br *= trans
         
         val clr = Color.WHITE.toFloatBits()
         
-        var uv1 = v2(if (fx > 0) texR.getU() else texR.getU2(),
-        			 if (fy > 0) texR.getV() else texR.getV2())
-        var uv2 = v2(if (fx > 0) texR.getU2() else texR.getU(),
-        			 if (fy > 0) texR.getV2() else texR.getV())
+        var (flipX, flipY) = tc.flip
+        var fx = if (flipX) -1f else 1f
+        var fy = if (flipY) -1f else 1f
         
-        // Vertices are made up of x,y,color,u,v
+        // Texture coords
+        var uv1 = v2(texR.getU(), texR.getV())
+        var uv2 = v2(texR.getU2(), texR.getV2())
+        
+        // Vertices are made up of x,y,color,u,v, clockwise
         var verts = Array[Float](
-            l, b, clr, uv1.x, uv2.y,
-            l, t, clr, uv1.x, uv1.y,
-            r, t, clr, uv2.x, uv1.y,
-            r, b, clr, uv2.x, uv2.y);
+            bl.x, bl.y, clr, uv1.x, uv2.y,
+            tl.x, tl.y, clr, uv1.x, uv1.y,
+            tr.x, tr.y, clr, uv2.x, uv1.y,
+            br.x, br.y, clr, uv2.x, uv2.y);
         
-        // TODO: Regions and rects!
         batch.draw(texR.getTexture(), verts, 0, verts.length);
-        
         
         
       case _ =>

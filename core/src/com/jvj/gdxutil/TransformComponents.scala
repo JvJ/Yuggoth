@@ -54,13 +54,11 @@ abstract class TransformComponent(
   
   def localTransform : Matrix3 = {
     var m = new Matrix3()
-    var (fx, fy) = 
-      (if (flipX) -1 else 1, if (flipY) -1 else 1)
-    
+    var (fx, fy) = (if (flipX) -1f else 1f, if (flipY) -1f else 1f)
       
-       m.scale(fx,fy).translate(position).rotate(rotation).scale(scale)
-      //m.scale(scale).rotate(rotation).translate(position).scale(fx,fy)
-    
+      m.translate(position)
+        .rotate(rotation)
+        .scale(scale * v2(fx,fy))
   }
   
   // Transformation 
@@ -68,7 +66,7 @@ abstract class TransformComponent(
    * */
   def transform : Matrix3 = {
     
-    new Matrix3(parentTransform).mul(localTransform)
+    parentTransform.mul(localTransform)
   }
   
   def parentTransform: Matrix3 =

@@ -61,7 +61,7 @@ class TextureComponent(batch:SpriteBatch, texR:TextureRegion, size:Vector2) exte
         var trans = new Matrix3(tc.parentTransform)
         var fx = if (tc.flipX) -1f else 1f
         var fy = if (tc.flipY) -1f else 1f
-        trans.scale(fx, fy)
+        //trans.scale(fx, fy)
         
         var c1 = (tc.position - ((tc.origin * tc.scale ) ^> tc.rotation)) * trans
         var c2 = (c1 + ((tc.sizev * tc.scale ) ^> tc.rotation )) * trans
@@ -146,18 +146,29 @@ object SysRender extends System{
         }
         case None => ;
       }
-    }
+    }    
     
-    batch.begin()
+    
+    
     for(l <- min to max){
+      batch.begin()
       for (e <- ec){
+        val reg = """BabyBit.*""".r
+        
         e.component[Renderer] match {
-          case Some(r) => if (r.layer == l) this(ec,e)
+            case Some(r) => if (r.layer == l){
+              e.id match {
+            case EntityName(str @ reg(_ *)) => 
+              print("Updating "+str);
+            case _ => ;
+            }
+            this(ec,e)
+          }
           case None => ;
         }
       }
+      batch.end()
     }
-    batch.end()
     
     ec
   }
